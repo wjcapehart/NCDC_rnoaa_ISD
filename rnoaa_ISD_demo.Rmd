@@ -1,0 +1,440 @@
+---
+title: "rnoaa  Notebook"
+output: html_notebook
+---
+
+RNOAA R test for the ISD/DS3505 Datasets
+
+To begin with we will use the "rnoaa" library.
+
+It is also handy to have the "lubridate" library to manage the time coordinate data.  
+
+ISD Parsing is dfone with the "isdparser"
+
+You will need to install all three
+
+I also included "openair" for wind roses
+
+Something to be aware of before we start.  
+
+These are an merger of several report message types.  Most are derived for use at airports. The data archiving is designed to house any of the messages in one single record.
+
+For some fields like temperature, pressure, humidity and wind speed, this isn't too much of a problem.  But for other fields like cloud and precip and significant weather that will vary with the type of report message.
+
+```{r}
+library("lubridate")
+library("isdparser")
+library("rnoaa")
+library("openair")
+```
+
+To target a given station location you will need two catalog codes
+
+The USAF Code and the WBAN code.
+
+If you didn't work in the old Asheville Federal Building in the 80s before them moved and don't know what file cabinet to use there is hope.
+
+If you have the latitude and longitude and radius in KM you can pull those fields from  using the isd_station_search function.
+
+```{r}
+stations_near_KRAP = isd_stations_search(lat=44,      # degrees_north
+                                         lon=-103,    # degrees_east
+                                         radius=100)  # km
+
+print(stations_near_KRAP)
+```
+
+So for Rapid City Regional Airport (KRAP) which probably has the best reporting fidelity since it's a First Order Station for NOAA, and for your period, you will want to use the following stationID pair.
+
+I am not sure as to the quality or reliability of Elsworth (KRCA), Custer (KCUT) or Spearfish (KSPF) since they are not affiliated with an NWS office.
+
+```{r}
+krap_usaf = 726620
+krap_wban =  24090
+krap_year =   2010
+
+station_name_label = paste("Rapid City", 
+                           krap_year)
+
+output_file_name = paste("KRAP",
+                         krap_year,
+                         ".csv",
+                         sep="")
+
+```
+
+To extract the data (and this can take a few minutes since you are digging on the NOAA servers...) 
+
+use the isd command following this example.  The orignal data is kept in a compressed "tarball" with one tarball per year.
+
+This also has the option for multiprocessing but you probably don't need it.
+
+```{r}
+KRAP_data = isd(usaf = krap_usaf,  # your usaf number
+                wban = krap_wban,  # your wban number
+                year = krap_year,  # your year
+                progress=TRUE)     # shows prograss as you go
+
+print(KRAP_data)
+
+```
+
+
+
+You will want to fix the date.  In the ISD format it is split between calendar day (UTC time always) and clock hour (UTC time always)
+
+This can be done with the lubridate function ymd_hm()
+
+```{r}
+KRAP_data$date_time = ymd_hm(sprintf("%s %s",
+                                      as.character(KRAP_data$date),
+                                      KRAP_data$time))
+
+KRAP_data$date = KRAP_data$date_time 
+
+```
+
+
+
+
+The data is parsed as strings.  So you'll have to use the as.numeric() a lot
+Missing fields are typically ID'ed as 9999 in the original data
+
+```{r}
+
+
+KRAP_data$temperature[KRAP_data$temperature == "+9999"]                   = NA 
+
+KRAP_data$temperature_dewpoint[KRAP_data$temperature_dewpoint == "+9999"] = NA
+
+KRAP_data$air_pressure[KRAP_data$air_pressure == "99999"]                 = NA
+
+KRAP_data$wind_speed[KRAP_data$wind_speed == "9999"]                     = NA
+
+KRAP_data$wind_direction[KRAP_data$wind_direction == "999"]             = NA
+
+
+
+
+```
+
+Some of these fields, but not all, are managed with the isd_transform() function with respect to scaling
+
+temp/dewpoint (deg C) converted from 10ths of degree
+mean sea level pressure (hPa) converted from 10ths of hPa
+wind speed     (m s-1) converted from 10ths of m s-1
+wind direction (compass decimal degrees) 
+
+Precip is also processed but this data set is an amalgum of both hourly, 3-hrly, 6-hrly, 12-hrly, 24-hrly data depending on the report message that's being archived and I am not sure you will want that, especially if you can get Hourly Precip Data from another source
+
+```{r}
+
+KRAP_data = isd_transform(KRAP_data)
+
+# patch the wind direction so it's 0 degrees when the wind speed is missing
+
+KRAP_data$wind_direction[KRAP_data$wind_speed == 0]             = 0
+
+
+```
+
+
+
+Cloud Cover is held in several positions in the dataset.  Once again this is because the data is designed for use for aerodrome use.  
+
+I am setting it up to give you the "GF1 group" which is the total cloud cover for all flight levels.  These fields are often archived in "octaves" or eights and I'll be converting them to fractions for you.  IN cases of "obscured sky" caused by fog or smoke, I will label it 100% for total obscuration or 50% covered for partial obscuration.    
+
+
+```{r}
+
+KRAP_data$GF1_total_cloud_cover_fraction = as.numeric(KRAP_data$GF1_coverage)
+
+# 00: None, SKC or CLR
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==00] = 0.00
+
+# 01: One okta - 1/10 or less but not zero
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==01] = 1.0 / 8.0
+
+# 02: Two oktas - 2/10 ‑ 3/10, or FEW
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==02] = 2.0 / 8.0
+
+# 03: Three oktas - 4/10
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==03] = 3.0 / 8.0
+
+# 04: Four oktas - 5/10, or SCT
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==04] = 4.0 / 8.0
+
+# 05: Five oktas - 6/10
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==05] = 5.0 / 8.0
+
+# 06: Six oktas - 7/10 ‑ 8/10
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==06] = 6.0 / 8.0
+
+# 07: Seven oktas - 9/10 or more but not 10/10, or BKN
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==07] = 7.0 / 8.0
+
+# 08: Eight oktas - 10/10, or OVC
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==08] = 8.0 / 8.0
+
+# 09: Sky obscured, or cloud amount cannot be estimated
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==09] = 8.0 / 8.0
+
+# 10: Partial obscuration
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==10] = 4.0 / 8.0
+
+# 11: Thin scattered
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==11] = 2.0 / 8.0
+
+# 12: Scattered
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==12] = 4.0 / 8.0
+
+# 13: Dark scattered
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==13] = 5.0 / 8.0
+
+# 14: Thin broken
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==14] = 6.0 / 8.0
+
+# 15: Broken
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==15] = 7.0 / 8.0
+
+# 16: Dark broken
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==16] = 8.0 / 8.0
+
+# 17: Thin overcast
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==17] = 4.0 / 8.0
+
+# 18: Overcast
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==18] = 8.0 / 8.0
+
+# 19: Dark overcast
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==19] = 8.0 / 8.0
+
+# 99: Missing
+
+KRAP_data$GF1_total_cloud_cover_fraction[KRAP_data$GF1_total_cloud_cover_fraction==99] = NA
+
+
+```
+
+
+And to plot everthing out...
+
+Temperature
+
+```{r}
+
+plot(x       = KRAP_data$date_time,
+     y       = KRAP_data$temperature, 
+     type    = "l", 
+     col     = "red", 
+     lwd     = 1.5, 
+     cex.lab = 1.25,
+     xlab    = "Date", 
+     ylab    = "Temperature (deg C)",
+     main    = station_name_label)
+
+```
+
+
+Dew Point
+
+```{r}
+
+
+plot(x       = KRAP_data$date_time,
+     y       = KRAP_data$temperature_dewpoint, 
+     type    = "l", 
+     col     = "darkgreen", 
+     lwd     = 1.5, 
+     cex.lab = 1.25,
+     xlab    = "Date", 
+     ylab    = "Dew Point (deg C)",
+     main    = station_name_label)
+
+```
+
+Cloud Fraction 
+```{r}
+
+
+plot(x       = KRAP_data$date_time,
+     y       = KRAP_data$GF1_total_cloud_cover_fraction, 
+     type    = "l", 
+     col     = "grey", 
+     lwd     = 1.5, 
+     cex.lab = 1.25,
+     xlab    = "Date", 
+     ylab    = "Cloud Cover (fraction)",
+     main    = station_name_label)
+
+```
+
+
+
+
+Pressure 
+
+```{r}
+
+
+plot(x       = KRAP_data$date_time,
+     y       = KRAP_data$air_pressure, 
+     type    = "l", 
+     col     = "blue", 
+     lwd     = 1.5, 
+     cex.lab = 1.25,
+     xlab    = "Date", 
+     ylab    = "MSL Pressure (mb)",
+     main    = station_name_label)
+
+```
+
+
+
+Wind Speed 
+
+```{r}
+
+
+plot(x       = KRAP_data$date_time,
+     y       = KRAP_data$wind_speed, 
+     type    = "l", 
+     col     = "darkblue", 
+     lwd     = 1.5, 
+     cex.lab = 1.25,
+     xlab    = "Date", 
+     ylab    = "Wind Speed (m s-1)",
+     main    = station_name_label)
+
+```
+
+
+Wind Rose 
+
+```{r}
+
+windrose_frame = data.frame(date      = KRAP_data$date_time,
+                            ws        = KRAP_data$wind_speed,
+                            wd        = KRAP_data$wind_direction,
+                            longitude = KRAP_data$longitude,
+                            latitude  = KRAP_data$latitude)
+
+
+
+windRose(mydata     = windrose_frame, 
+         ws         = "ws", 
+         wd         = "wd",
+         type       = "year",
+         hemisphere = "northern",
+         main       = station_name_label)
+
+
+windRose(mydata     = windrose_frame, 
+         ws         = "ws", 
+         wd         = "wd",
+         type       = "season",
+         hemisphere = "northern",
+         main       = station_name_label)
+
+
+```
+
+Finally let's put everything into a single time frame since we have observations at several times.  We can interopolate the data to the nearest hour.
+
+We do this by first creating a regularly spaced time vector
+
+
+```{r}
+
+start_date = as.POSIXct(paste(krap_year,
+                              "-01-01 00:00:00 UTC",
+                              sep=""),
+                        tz = "UTC")
+
+end_date   = as.POSIXct(paste(krap_year,
+                              "-12-31 00:00:00 UTC",
+                              sep=""),
+                        tz = "UTC")
+
+hour_time = seq.POSIXt(from = start_date,
+                        to   = end_date,
+                        by   = "1 hour",
+                        tz   = "UTC")
+
+
+
+```
+
+We then interpolate between the various fields and frame them... 
+
+```{r}
+
+KRAP_time_series                  = data.frame(date = hour_time)
+
+KRAP_time_series$temperature_degC = approx(x      = KRAP_data$date_time,
+                                           y      = KRAP_data$temperature,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+                              
+KRAP_time_series$dewpoint_degC    = approx(x      = KRAP_data$date_time,
+                                           y      = KRAP_data$temperature_dewpoint,
+                                           method = "linear",
+                                           xout   = hour_time)$y 
+                              
+KRAP_time_series$cloud_fraction   = approx(x      = KRAP_data$date_time,
+                                           y      = KRAP_data$GF1_total_cloud_cover_fraction,
+                                           method = "linear",
+                                           xout   = hour_time)$y 
+                              
+KRAP_time_series$press_msl_hPa    = approx(x      = KRAP_data$date_time,
+                                           y      = KRAP_data$air_pressure,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+                              
+KRAP_time_series$wind_spd_ms      = approx(x      = KRAP_data$date_time,
+                                           y      = KRAP_data$wind_speed,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+                              
+KRAP_time_series$wind_dir_degrees  = approx(x     = KRAP_data$date_time,
+                                           y      = KRAP_data$wind_direction,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+
+
+
+print(KRAP_time_series)
+```
+
+And send it to an ascii file
+
+```{r}
+
+
+write.table(x    = KRAP_time_series, 
+            file = output_file_name, 
+            sep  =", ",
+            row.names = FALSE)
+
+```
+
