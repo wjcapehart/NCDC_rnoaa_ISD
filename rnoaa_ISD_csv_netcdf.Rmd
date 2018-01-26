@@ -1,15 +1,13 @@
 ---
 title: "rnoaa  Notebook"
-output:
-  pdf_document: default
-  html_document:
-    df_print: paged
+output: html_notebook
 ---
 
+https://www.ncdc.noaa.gov/isd
+
+__Development_Edition_Do_Not_Use_Until_Released__
+
 RNOAA R test for the ISD/DS3505 Datasets
-
-Original Source : https://www.ncdc.noaa.gov/isd
-
 
 Pardon the typos; they are legion.
 
@@ -34,6 +32,7 @@ library("lubridate")
 library("isdparser")
 library("rnoaa")
 library("openair")
+library("ncdf4")
 ```
 
 To target a given station location you will need two catalog codes
@@ -45,11 +44,11 @@ If you didn't work in the old Asheville Federal Building in the 80s before they 
 If you have the latitude and longitude and radius in KM you can pull those fields from  using the isd_station_search function.
 
 ```{r}
-stations_near_KRAP = isd_stations_search(lat    =   44,  # degrees_north
+stations_near_targ = isd_stations_search(lat    =   44,  # degrees_north
                                          lon    = -103,  # degrees_east
                                          radius =  100)  # km
 
-print(stations_near_KRAP)
+print(stations_near_targ)
 ```
 
 So for Rapid City Regional Airport (KRAP) which probably has the best reporting fidelity since it's a First Order Station for NOAA, and for your period, you will want to use the following stationID pair.
@@ -57,16 +56,15 @@ So for Rapid City Regional Airport (KRAP) which probably has the best reporting 
 I am not sure as to the quality or reliability of Elsworth (KRCA), Custer (KCUT) or Spearfish (KSPF) since they are not affiliated with an NWS office.
 
 ```{r}
-targ_usaf = 999999
-targ_wban =  24090
-targ_year =   1967
+target_usaf = 726620
+target_wban =  24090
+target_year =   2010
 
 station_name_label = paste("Rapid City", 
-                           targ_year)
+                           target_year)
 
 output_file_name = paste("KRAP",
-                         "_",
-                         targ_year,
+                         target_year,
                          ".csv",
                          sep="")
 
@@ -79,10 +77,10 @@ use the isd command following this example.  The original data is kept in a comp
 This also has the option for multiprocessing but you probably don't need it.
 
 ```{r}
-targ_data = isd(usaf = targ_usaf,  # your usaf number
-                wban = targ_wban,  # your wban number
-                year = targ_year,  # your year
-                progress=TRUE)     # shows prograss as you go
+targ_data = isd(usaf = target_usaf,  # your usaf number
+                wban = target_wban,  # your wban number
+                year = target_year,  # your year
+                progress=TRUE)       # shows prograss as you go
 
 print(targ_data)
 
@@ -375,12 +373,12 @@ We do this by first creating a regularly spaced time vector
 
 ```{r}
 
-start_date = as.POSIXct(paste(targ_year,
+start_date = as.POSIXct(paste(target_year,
                               "-01-01 00:00:00 UTC",
                               sep=""),
                         tz = "UTC")
 
-end_date   = as.POSIXct(paste(targ_year,
+end_date   = as.POSIXct(paste(target_year,
                               "-12-31 00:00:00 UTC",
                               sep=""),
                         tz = "UTC")
@@ -444,6 +442,15 @@ write.table(x    = targ_time_series,
             file = output_file_name, 
             sep  =", ",
             row.names = FALSE)
+
+```
+
+This section prepeares the output for a formal NetCDF file.
+
+This section is un preparation. 
+
+
+```{r}
 
 ```
 
