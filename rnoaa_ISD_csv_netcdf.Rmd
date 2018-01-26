@@ -48,6 +48,9 @@ stations_near_targ = isd_stations_search(lat    =   44,  # degrees_north
                                          lon    = -103,  # degrees_east
                                          radius =  100)  # km
 
+file_title_string = "KRAP"
+name_of_station   = "Rapid City Regional Airport"
+
 print(stations_near_targ)
 ```
 
@@ -60,10 +63,10 @@ target_usaf = 726620
 target_wban =  24090
 target_year =   2010
 
-station_name_label = paste("Rapid City", 
+station_name_label = paste(name_of_station, 
                            target_year)
 
-output_file_name = paste("KRAP",
+output_file_name = paste(file_title_string,
                          target_year,
                          ".csv",
                          sep="")
@@ -102,8 +105,6 @@ targ_data$date = targ_data$date_time
 ```
 
 
-
-
 The data is parsed as strings.  So you'll have to use the as.numeric() a lot
 Missing fields are typically ID'ed as 9999 in the original data
 
@@ -132,7 +133,39 @@ mean sea level pressure (hPa) converted from 10ths of hPa
 wind speed     (m s-1) converted from 10ths of m s-1
 wind direction (compass decimal degrees) 
 
-Precip is also processed but this data set is an merger of both hourly, 3-hrly, 6-hrly, 12-hrly, 24-hrly data depending on the report message that's being archived and I am not sure you will want that, especially if you can get Hourly Precip Data from another source
+Precip is also processed but this data set is an merger of both hourly, 3-hrly, 6-hrly, 12-hrly, 24-hrly data depending on the report message that's being archived.  T
+
+```{r}
+
+precip_workspace_time_interval = as.numeric(targ_data$AA1_period_quantity_hrs)
+
+
+precip_workspace_depth         = as.numeric(targ_data$AA1_depth)
+precip_workspace_depth[precip_workspace_depth == 9999]                   = NA 
+
+precip_workspace_depth_01hrly =  precip_workspace_depth
+precip_workspace_depth_03hrly =  precip_workspace_depth
+precip_workspace_depth_06hrly =  precip_workspace_depth
+precip_workspace_depth_12hrly =  precip_workspace_depth
+precip_workspace_depth_24hrly =  precip_workspace_depth
+
+precip_workspace_depth_01hrly[precip_workspace_time_interval != 01]  =  NA
+precip_workspace_depth_03hrly[precip_workspace_time_interval != 03]  =  NA
+precip_workspace_depth_06hrly[precip_workspace_time_interval != 06]  =  NA
+precip_workspace_depth_12hrly[precip_workspace_time_interval != 12]  =  NA
+precip_workspace_depth_24hrly[precip_workspace_time_interval != 24]  =  NA
+
+targ_data$precip_01hr = precip_workspace_depth_01hrly
+targ_data$precip_03hr = precip_workspace_depth_03hrly
+targ_data$precip_06hr = precip_workspace_depth_06hrly
+targ_data$precip_12hr = precip_workspace_depth_12hrly
+targ_data$precip_24hr = precip_workspace_depth_24hrly
+
+```
+
+
+
+
 
 ```{r}
 
@@ -150,7 +183,7 @@ targ_data$wind_direction[targ_data$wind_speed == 0]             = 0
 Cloud Cover is held in several positions in the dataset.  Once again this is because the data is designed for use for aerodrome use.  
 
 I am setting it up to give you the "GF1 group" which is the total cloud cover for all flight levels.  These fields are often archived in "octaves" or eights and I'll be converting them to fractions for you.  IN cases of "obscured sky" caused by fog or smoke, I will label it 100% for total obscured sky or 50% covered for partial obscured skies.    
-
+print
 
 ```{r}
 
@@ -428,8 +461,30 @@ targ_time_series$wind_dir_degrees  = approx(x     = targ_data$date_time,
                                            method = "linear",
                                            xout   = hour_time)$y
 
+targ_time_series$ISD_precip_01hr   = approx(x      = targ_data$date_time,
+                                            y      = targ_data$precip_01hr,
+                                            method = "constant",
+                                            xout   = hour_time)$y
 
+targ_time_series$ISD_precip_03hr   = approx(x      = targ_data$date_time,
+                                            y      = targ_data$precip_03hr,
+                                            method = "constant",
+                                            xout   = hour_time)$y
 
+targ_time_series$ISD_precip_06hr   = approx(x      = targ_data$date_time,
+                                            y      = targ_data$precip_06hr,
+                                            method = "constant",
+                                            xout   = hour_time)$y
+
+#targ_time_series$ISD_precip_12hr   = approx(x      = targ_data$date_time,
+#                                            y      = targ_data$precip_12hr,
+#                                            method = "constant",
+#                                            xout   = hour_time)$y
+
+targ_time_series$ISD_precip_24hr   = approx(x      = targ_data$date_time,
+                                            y      = targ_data$precip_24hr,
+                                            method = "constant",
+                                            xout   = hour_time)$y
 print(targ_time_series)
 ```
 
@@ -437,6 +492,11 @@ And send it to an ASCII file
 
 ```{r}
 
+output_file_name = paste(file_title_string,
+                         "_HOURLY_",
+                         target_year,
+                         ".csv",
+                         sep="")
 
 write.table(x    = targ_time_series, 
             file = output_file_name, 
@@ -445,9 +505,43 @@ write.table(x    = targ_time_series,
 
 ```
 
+
+Now let's make a "raw" datafile for all observations regardless what part of the hour they are taken.
+
+```{r}
+
+targ_time_series_raw                      = data.frame(date = targ_data$date_time)
+targ_time_series_raw$temperature_dewpoint = targ_data$temperature_dewpoint
+targ_time_series_raw$cloud_cover_fraction = targ_data$GF1_total_cloud_cover_fraction
+targ_time_series_raw$air_pressure         = targ_data$air_pressure
+
+targ_time_series_raw$wind_speed       = targ_data$wind_speed
+targ_time_series_raw$wind_dir_degrees = targ_data$wind_direction
+
+targ_time_series_raw$ISD_precip_01hr = targ_data$precip_01hr
+targ_time_series_raw$ISD_precip_03hr = targ_data$precip_03hr
+targ_time_series_raw$ISD_precip_06hr = targ_data$precip_06hr
+targ_time_series_raw$ISD_precip_12hr = targ_data$precip_12hr
+targ_time_series_raw$ISD_precip_24hr = targ_data$precip_24hr
+
+  
+output_file_name = paste(file_title_string,
+                         "_RAW_",
+                         target_year,
+                         ".csv",
+                         sep="")
+
+write.table(x    = targ_time_series_raw, 
+            file = output_file_name, 
+            sep  =", ",
+            row.names = FALSE)
+
+```
+
+
 This section prepeares the output for a formal NetCDF file.
 
-This section is un preparation. 
+This section is in preparation. 
 
 
 ```{r}
