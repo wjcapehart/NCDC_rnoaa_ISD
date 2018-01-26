@@ -45,18 +45,19 @@ If you didn't work in the old Asheville Federal Building in the 80s before they 
 If you have the latitude and longitude and radius in KM you can pull those fields from  using the isd_station_search function.
 
 ```{r}
-stations_near_KRAP = isd_stations_search(lat    =   44,  # degrees_north
-                                         lon    = -103,  # degrees_east
-                                         radius =  100)  # km
+stations_near_target = isd_stations_search(lat    =   44,  # degrees_north
+                                           lon    = -103,  # degrees_east
+                                           radius =  100)  # km
 
-print(stations_near_KRAP)
+print(stations_near_target)
 ```
 
-So for Rapid City Regional Airport (KRAP) which probably has the best reporting fidelity since it's a First Order Station for NOAA, and for your period, you will want to use the following stationID pair.
+So for Rapid City Regional Airport (KRAP) which probably has the best reporting fidelity in this example's region since it's a First Order Station for NOAA, and for your period, you will want to use the following stationID pair.
 
 I am not sure as to the quality or reliability of Elsworth (KRCA), Custer (KCUT) or Spearfish (KSPF) since they are not affiliated with an NWS office.
 
 ```{r}
+<<<<<<< HEAD
 targ_usaf = 999999
 targ_wban =  24090
 targ_year =   1967
@@ -67,6 +68,17 @@ station_name_label = paste("Rapid City",
 output_file_name = paste("KRAP",
                          "_",
                          targ_year,
+=======
+target_usaf = 726620
+target_wban =  24090
+target_year =   2010
+
+station_name_label = paste("Rapid City", 
+                           target_year)
+
+output_file_name = paste("KRAP",
+                         target_year,
+>>>>>>> origin/master
                          ".csv",
                          sep="")
 
@@ -79,12 +91,21 @@ use the isd command following this example.  The original data is kept in a comp
 This also has the option for multiprocessing but you probably don't need it.
 
 ```{r}
+<<<<<<< HEAD
 targ_data = isd(usaf = targ_usaf,  # your usaf number
                 wban = targ_wban,  # your wban number
                 year = targ_year,  # your year
                 progress=TRUE)     # shows prograss as you go
 
 print(targ_data)
+=======
+NCDC_data = isd(usaf = target_usaf,  # your usaf number
+                wban = target_wban,  # your wban number
+                year = target_year,  # your year
+                progress=TRUE)       # shows prograss as you go
+
+print(NCDC_data)
+>>>>>>> origin/master
 
 ```
 
@@ -95,11 +116,19 @@ You will want to fix the date.  In the ISD format it is split between calendar d
 This can be done with the lubridate function ymd_hm()
 
 ```{r}
+<<<<<<< HEAD
 targ_data$date_time = ymd_hm(sprintf("%s %s",
                                       as.character(targ_data$date),
                                       targ_data$time))
 
 targ_data$date = targ_data$date_time 
+=======
+NCDC_data$date_time = ymd_hm(sprintf("%s %s",
+                                      as.character(NCDC_data$date),
+                                      NCDC_data$time))
+
+NCDC_data$date = NCDC_data$date_time 
+>>>>>>> origin/master
 
 ```
 
@@ -112,6 +141,7 @@ Missing fields are typically ID'ed as 9999 in the original data
 ```{r}
 
 
+<<<<<<< HEAD
 targ_data$temperature[targ_data$temperature == "+9999"]                   = NA 
 
 targ_data$temperature_dewpoint[targ_data$temperature_dewpoint == "+9999"] = NA
@@ -121,6 +151,17 @@ targ_data$air_pressure[targ_data$air_pressure == "99999"]                 = NA
 targ_data$wind_speed[targ_data$wind_speed == "9999"]                     = NA
 
 targ_data$wind_direction[targ_data$wind_direction == "999"]             = NA
+=======
+NCDC_data$temperature[NCDC_data$temperature == "+9999"]                   = NA 
+
+NCDC_data$temperature_dewpoint[NCDC_data$temperature_dewpoint == "+9999"] = NA
+
+NCDC_data$air_pressure[NCDC_data$air_pressure == "99999"]                 = NA
+
+NCDC_data$wind_speed[NCDC_data$wind_speed == "9999"]                      = NA
+
+NCDC_data$wind_direction[NCDC_data$wind_direction == "999"]               = NA
+>>>>>>> origin/master
 
 
 
@@ -138,11 +179,19 @@ Precip is also processed but this data set is an merger of both hourly, 3-hrly, 
 
 ```{r}
 
+<<<<<<< HEAD
 targ_data = isd_transform(targ_data)
 
 # patch the wind direction so it's 0 degrees when the wind speed is missing
 
 targ_data$wind_direction[targ_data$wind_speed == 0]             = 0
+=======
+NCDC_data = isd_transform(NCDC_data)
+
+# patch the wind direction so it's 0 degrees when the wind speed is missing
+
+NCDC_data$wind_direction[NCDC_data$wind_speed == 0] = 0
+>>>>>>> origin/master
 
 
 ```
@@ -156,6 +205,7 @@ I am setting it up to give you the "GF1 group" which is the total cloud cover fo
 
 ```{r}
 
+<<<<<<< HEAD
 targ_data$GF1_total_cloud_cover_fraction = as.numeric(targ_data$GF1_coverage)
 
 # 00: None, SKC or CLR
@@ -241,6 +291,93 @@ targ_data$GF1_total_cloud_cover_fraction[targ_data$GF1_total_cloud_cover_fractio
 # 99: Missing
 
 targ_data$GF1_total_cloud_cover_fraction[targ_data$GF1_total_cloud_cover_fraction==99] = NA
+=======
+NCDC_data$GF1_total_cloud_cover_fraction = as.numeric(NCDC_data$GF1_coverage)
+
+# 00: None, SKC or CLR
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==00] = 0.00
+
+# 01: One okta - 1/10 or less but not zero
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==01] = 1.0 / 8.0
+
+# 02: Two oktas - 2/10 ‑ 3/10, or FEW
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==02] = 2.0 / 8.0
+
+# 03: Three oktas - 4/10
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==03] = 3.0 / 8.0
+
+# 04: Four oktas - 5/10, or SCT
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==04] = 4.0 / 8.0
+
+# 05: Five oktas - 6/10
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==05] = 5.0 / 8.0
+
+# 06: Six oktas - 7/10 ‑ 8/10
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==06] = 6.0 / 8.0
+
+# 07: Seven oktas - 9/10 or more but not 10/10, or BKN
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==07] = 7.0 / 8.0
+
+# 08: Eight oktas - 10/10, or OVC
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==08] = 8.0 / 8.0
+
+# 09: Sky obscured, or cloud amount cannot be estimated
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==09] = 8.0 / 8.0
+
+# 10: Partial obscuration
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==10] = 4.0 / 8.0
+
+# 11: Thin scattered
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==11] = 2.0 / 8.0
+
+# 12: Scattered
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==12] = 4.0 / 8.0
+
+# 13: Dark scattered
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==13] = 5.0 / 8.0
+
+# 14: Thin broken
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==14] = 6.0 / 8.0
+
+# 15: Broken
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==15] = 7.0 / 8.0
+
+# 16: Dark broken
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==16] = 8.0 / 8.0
+
+# 17: Thin overcast
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==17] = 4.0 / 8.0
+
+# 18: Overcast
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==18] = 8.0 / 8.0
+
+# 19: Dark overcast
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==19] = 8.0 / 8.0
+
+# 99: Missing
+
+NCDC_data$GF1_total_cloud_cover_fraction[NCDC_data$GF1_total_cloud_cover_fraction==99] = NA
+>>>>>>> origin/master
 
 
 ```
@@ -252,8 +389,13 @@ Temperature
 
 ```{r}
 
+<<<<<<< HEAD
 plot(x       = targ_data$date_time,
      y       = targ_data$temperature, 
+=======
+plot(x       = NCDC_data$date_time,
+     y       = NCDC_data$temperature, 
+>>>>>>> origin/master
      type    = "l", 
      col     = "red", 
      lwd     = 1.5, 
@@ -270,8 +412,13 @@ Dew Point
 ```{r}
 
 
+<<<<<<< HEAD
 plot(x       = targ_data$date_time,
      y       = targ_data$temperature_dewpoint, 
+=======
+plot(x       = NCDC_data$date_time,
+     y       = NCDC_data$temperature_dewpoint, 
+>>>>>>> origin/master
      type    = "l", 
      col     = "darkgreen", 
      lwd     = 1.5, 
@@ -286,8 +433,13 @@ Cloud Fraction
 ```{r}
 
 
+<<<<<<< HEAD
 plot(x       = targ_data$date_time,
      y       = targ_data$GF1_total_cloud_cover_fraction, 
+=======
+plot(x       = NCDC_data$date_time,
+     y       = NCDC_data$GF1_total_cloud_cover_fraction, 
+>>>>>>> origin/master
      type    = "l", 
      col     = "grey", 
      lwd     = 1.5, 
@@ -306,8 +458,13 @@ Pressure
 ```{r}
 
 
+<<<<<<< HEAD
 plot(x       = targ_data$date_time,
      y       = targ_data$air_pressure, 
+=======
+plot(x       = NCDC_data$date_time,
+     y       = NCDC_data$air_pressure, 
+>>>>>>> origin/master
      type    = "l", 
      col     = "blue", 
      lwd     = 1.5, 
@@ -325,8 +482,13 @@ Wind Speed
 ```{r}
 
 
+<<<<<<< HEAD
 plot(x       = targ_data$date_time,
      y       = targ_data$wind_speed, 
+=======
+plot(x       = NCDC_data$date_time,
+     y       = NCDC_data$wind_speed, 
+>>>>>>> origin/master
      type    = "l", 
      col     = "darkblue", 
      lwd     = 1.5, 
@@ -342,11 +504,19 @@ Wind Rose
 
 ```{r}
 
+<<<<<<< HEAD
 windrose_frame = data.frame(date      = targ_data$date_time,
                             ws        = targ_data$wind_speed,
                             wd        = targ_data$wind_direction,
                             longitude = targ_data$longitude,
                             latitude  = targ_data$latitude)
+=======
+windrose_frame = data.frame(date      = NCDC_data$date_time,
+                            ws        = NCDC_data$wind_speed,
+                            wd        = NCDC_data$wind_direction,
+                            longitude = NCDC_data$longitude,
+                            latitude  = NCDC_data$latitude)
+>>>>>>> origin/master
 
 
 
@@ -375,12 +545,20 @@ We do this by first creating a regularly spaced time vector
 
 ```{r}
 
+<<<<<<< HEAD
 start_date = as.POSIXct(paste(targ_year,
+=======
+start_date = as.POSIXct(paste(target_year,
+>>>>>>> origin/master
                               "-01-01 00:00:00 UTC",
                               sep=""),
                         tz = "UTC")
 
+<<<<<<< HEAD
 end_date   = as.POSIXct(paste(targ_year,
+=======
+end_date   = as.POSIXct(paste(target_year,
+>>>>>>> origin/master
                               "-12-31 00:00:00 UTC",
                               sep=""),
                         tz = "UTC")
@@ -398,6 +576,7 @@ We then interpolate between the various fields and frame them...
 
 ```{r}
 
+<<<<<<< HEAD
 targ_time_series                  = data.frame(date = hour_time)
 
 targ_time_series$temperature_degC = approx(x      = targ_data$date_time,
@@ -433,14 +612,53 @@ targ_time_series$wind_dir_degrees  = approx(x     = targ_data$date_time,
 
 
 print(targ_time_series)
+=======
+NCDC_time_series                  = data.frame(date = hour_time)
+
+NCDC_time_series$temperature_degC = approx(x      = NCDC_data$date_time,
+                                           y      = NCDC_data$temperature,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+                              
+NCDC_time_series$dewpoint_degC    = approx(x      = NCDC_data$date_time,
+                                           y      = NCDC_data$temperature_dewpoint,
+                                           method = "linear",
+                                           xout   = hour_time)$y 
+                              
+NCDC_time_series$cloud_fraction   = approx(x      = NCDC_data$date_time,
+                                           y      = NCDC_data$GF1_total_cloud_cover_fraction,
+                                           method = "linear",
+                                           xout   = hour_time)$y 
+                              
+NCDC_time_series$press_msl_hPa    = approx(x      = NCDC_data$date_time,
+                                           y      = NCDC_data$air_pressure,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+                              
+NCDC_time_series$wind_spd_ms      = approx(x      = NCDC_data$date_time,
+                                           y      = NCDC_data$wind_speed,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+                              
+NCDC_time_series$wind_dir_degrees  = approx(x     = NCDC_data$date_time,
+                                           y      = NCDC_data$wind_direction,
+                                           method = "linear",
+                                           xout   = hour_time)$y
+
+print(NCDC_time_series)
+>>>>>>> origin/master
 ```
 
-And send it to an ASCII file
+And send it to a comma delimited ASCII file
 
 ```{r}
 
 
+<<<<<<< HEAD
 write.table(x    = targ_time_series, 
+=======
+write.table(x    = NCDC_time_series, 
+>>>>>>> origin/master
             file = output_file_name, 
             sep  =", ",
             row.names = FALSE)
