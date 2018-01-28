@@ -1,38 +1,50 @@
 ---
-title: "rnoaa  Notebook"
-output: html_notebook
+title: "RNOAA R Script for extracting ISD/DS3505 Datasets for output to CSV and netCDF"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
 ---
 
-https://www.ncdc.noaa.gov/isd
+References
 
-__Development_Edition_Do_Not_Use_Until_Released__
-
-RNOAA R test for the ISD/DS3505 Datasets
+* https://www.ncdc.noaa.gov/isd
+* ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-tech-report.pdf
 
 Pardon the typos; they are legion.
 
-To begin with we will use the "rnoaa" library.
+User expectations:  Set the following variables
 
-It is also handy to have the "lubridate" library to manage the time coordinate data.  
+* target_year
+* file_title_string
+* name_of_station
+* station_list_number
 
-ISD Parsing is sone with the "isdparser"
+The following libraries are required
 
-You will need to install all three
-
-I also included  the "openair" library for wind roses
+* rnoaa : API Interface for Accessing data from NOAA NCDC/NCEI
+* isdparser : Tools for parsing 'NOAA' Integrated Surface Data 
+* lubridate : Functions to work with date-times and time-spans
+* dplyr : A fast, consistent tool for working with data frame like objects
+* ncdf4 : API Interface to Unidata netCDF
+* openair : Tools for the Analysis of Air Pollution Data
 
 Something to be aware of before we start.  
 
-These are an merger of several report message types, METARs (Hourlies), SPECIs (special reports that supplement the METARs), and 3-hrly but more comprehensive SYNOPs.  Most are derived for use at airports and thus have more than one cloud field (low, middle and high). The data archiving is designed to house any of the messages in one single record.
+These are an merger of several report message types, METARs (Hourlies), SPECIs (special reports that supplement the METARs), [before modern data era these were SAOs] and 3-hrly but more comprehensive SYNOPs.  Most are derived for use at airports and thus have more than one cloud field (low, middle and high). The data archiving is designed to house any of the messages in one single record.
 
 For some fields like temperature, pressure, humidity and wind speed, this isn't too much of a problem.  But for other fields like cloud and precip and significant weather that will vary with the type of report message.
 
 ```{r}
-library("lubridate")
-library("isdparser")
+
 library("rnoaa")
-library("openair")
+library("isdparser")
+library("lubridate")
 library("ncdf4")
+library("dplyr")
+library("openair")
+
 ```
 
 To target a given station location you will need two catalog codes
@@ -44,9 +56,13 @@ If you didn't work in the old Asheville Federal Building in the 80s before they 
 If you have the latitude and longitude and radius in KM you can pull those fields from  using the isd_station_search function.
 
 ```{r}
-stations_near_targ = isd_stations_search(lat    =   44,  # degrees_north
-                                         lon    = -103,  # degrees_east
-                                         radius =  100)  # km
+
+stations_near_targ = isd_stations_search(lat    =   44.0444325,  # degrees_north
+                                         lon    = -103.0565652,  # degrees_east
+                                         radius =   10.)  # km
+
+
+target_year = 2017     # add manually                      
 
 file_title_string = "KRAP"
 name_of_station   = "Rapid City Regional Airport"
@@ -59,9 +75,16 @@ So for Rapid City Regional Airport (KRAP) which probably has the best reporting 
 I am not sure as to the quality or reliability of Elsworth (KRCA), Custer (KCUT) or Spearfish (KSPF) since they are not affiliated with an NWS office.
 
 ```{r}
-target_usaf = 726620
-target_wban =  24090
-target_year =   2010
+
+station_list_number = 1 # indicing starts at 1   # add manually
+
+
+target_usaf = stations_near_targ$usaf[station_list_number]  
+target_wban = stations_near_targ$wban[station_list_number]  
+
+station_lon = stations_near_targ$longitude[station_list_number]
+station_lat = stations_near_targ$latitude[station_list_number]
+station_alt = stations_near_targ$elev_m[station_list_number]
 
 station_name_label = paste(name_of_station, 
                            target_year)
@@ -80,16 +103,15 @@ use the isd command following this example.  The original data is kept in a comp
 This also has the option for multiprocessing but you probably don't need it.
 
 ```{r}
-targ_data = isd(usaf = target_usaf,  # your usaf number
-                wban = target_wban,  # your wban number
-                year = target_year,  # your year
-                progress=TRUE)       # shows prograss as you go
 
-print(targ_data)
+targ_data = isd(usaf     = target_usaf,  # your usaf number
+                wban     = target_wban,  # your wban number
+                year     = target_year,  # your year
+                progress = TRUE)         # shows prograss as you go
+
+colnames(targ_data)
 
 ```
-
-
 
 You will want to fix the date.  In the ISD format it is split between calendar day (UTC time always) and clock hour (UTC time always)
 
@@ -104,7 +126,6 @@ targ_data$date = targ_data$date_time
 
 ```
 
-
 The data is parsed as strings.  So you'll have to use the as.numeric() a lot
 Missing fields are typically ID'ed as 9999 in the original data
 
@@ -117,11 +138,9 @@ targ_data$temperature_dewpoint[targ_data$temperature_dewpoint == "+9999"] = NA
 
 targ_data$air_pressure[targ_data$air_pressure == "99999"]                 = NA
 
-targ_data$wind_speed[targ_data$wind_speed == "9999"]                     = NA
+targ_data$wind_speed[targ_data$wind_speed == "9999"]                      = NA
 
-targ_data$wind_direction[targ_data$wind_direction == "999"]             = NA
-
-
+targ_data$wind_direction[targ_data$wind_direction == "999"]               = NA
 
 
 ```
@@ -133,15 +152,15 @@ mean sea level pressure (hPa) converted from 10ths of hPa
 wind speed     (m s-1) converted from 10ths of m s-1
 wind direction (compass decimal degrees) 
 
-Precip is also processed but this data set is an merger of both hourly, 3-hrly, 6-hrly, 12-hrly, 24-hrly data depending on the report message that's being archived.  T
+Precip is also processed but this data set is an merger of both hourly, 3-hrly, 6-hrly, 12-hrly, 24-hrly data depending on the report message that's being archived.
 
 ```{r}
 
 precip_workspace_time_interval = as.numeric(targ_data$AA1_period_quantity_hrs)
 
+precip_workspace_depth = as.numeric(targ_data$AA1_depth)
 
-precip_workspace_depth         = as.numeric(targ_data$AA1_depth)
-precip_workspace_depth[precip_workspace_depth == 9999]                   = NA 
+precip_workspace_depth[precip_workspace_depth == 9999] = NA 
 
 precip_workspace_depth_01hrly =  precip_workspace_depth
 precip_workspace_depth_03hrly =  precip_workspace_depth
@@ -163,9 +182,7 @@ targ_data$precip_24hr = precip_workspace_depth_24hrly
 
 ```
 
-
-
-
+These fields that come from the ISD extraction are typically integer and aren't converted to their expected units.  This function below scales them correctly.
 
 ```{r}
 
@@ -177,8 +194,6 @@ targ_data$wind_direction[targ_data$wind_speed == 0]             = 0
 
 
 ```
-
-
 
 Cloud Cover is held in several positions in the dataset.  Once again this is because the data is designed for use for aerodrome use.  
 
@@ -276,10 +291,9 @@ targ_data$GF1_total_cloud_cover_fraction[targ_data$GF1_total_cloud_cover_fractio
 
 ```
 
+Now that we have our data prepeared we can now print things out.
 
-And to plot everything out...
-
-Temperature
+Plotting Temperature
 
 ```{r}
 
@@ -295,8 +309,7 @@ plot(x       = targ_data$date_time,
 
 ```
 
-
-Dew Point
+Plotting Dew Point
 
 ```{r}
 
@@ -313,13 +326,29 @@ plot(x       = targ_data$date_time,
 
 ```
 
-Cloud Fraction 
+Plotting Rainfall Precipitation
+
+```{r}
+
+plot(x       = targ_data$date_time,
+     y       = targ_data$precip_01hr, 
+     type    = "l", 
+     col     = "green", 
+     lwd     = 1.5, 
+     cex.lab = 1.25,
+     xlab    = "Date", 
+     ylab    = "Hourly Liquid Precip (mm)",
+     main    = station_name_label)
+
+```
+Plotting Cloud Fraction 
 ```{r}
 
 
 plot(x       = targ_data$date_time,
      y       = targ_data$GF1_total_cloud_cover_fraction, 
-     type    = "l", 
+     type    = "p", 
+     pch     = ".",   # as points
      col     = "grey", 
      lwd     = 1.5, 
      cex.lab = 1.25,
@@ -329,10 +358,7 @@ plot(x       = targ_data$date_time,
 
 ```
 
-
-
-
-Pressure 
+Plotting Pressure 
 
 ```{r}
 
@@ -349,12 +375,9 @@ plot(x       = targ_data$date_time,
 
 ```
 
-
-
-Wind Speed 
+Plotting Wind Speed 
 
 ```{r}
-
 
 plot(x       = targ_data$date_time,
      y       = targ_data$wind_speed, 
@@ -368,8 +391,7 @@ plot(x       = targ_data$date_time,
 
 ```
 
-
-Wind Rose 
+Plotting Wind Rose 
 
 ```{r}
 
@@ -378,8 +400,6 @@ windrose_frame = data.frame(date      = targ_data$date_time,
                             wd        = targ_data$wind_direction,
                             longitude = targ_data$longitude,
                             latitude  = targ_data$latitude)
-
-
 
 windRose(mydata     = windrose_frame, 
          ws         = "ws", 
@@ -396,6 +416,19 @@ windRose(mydata     = windrose_frame,
          hemisphere = "northern",
          main       = station_name_label)
 
+windRose(mydata     = windrose_frame, 
+         ws         = "ws", 
+         wd         = "wd",
+         type       = "month",
+         hemisphere = "northern",
+         main       = station_name_label)
+
+windRose(mydata     = windrose_frame, 
+         ws         = "ws", 
+         wd         = "wd",
+         type       = "hour",
+         hemisphere = "northern",
+         main       = station_name_label)
 
 ```
 
@@ -403,16 +436,15 @@ Finally let's put everything into a single time frame since we have observations
 
 We do this by first creating a regularly spaced time vector
 
-
 ```{r}
 
 start_date = as.POSIXct(paste(target_year,
-                              "-01-01 00:00:00 UTC",
+                              "-01-01 01:00:00 UTC",
                               sep=""),
                         tz = "UTC")
 
-end_date   = as.POSIXct(paste(target_year,
-                              "-12-31 00:00:00 UTC",
+end_date   = as.POSIXct(paste((target_year+1),
+                              "-01-01 00:00:00 UTC",
                               sep=""),
                         tz = "UTC")
 
@@ -422,12 +454,30 @@ hour_time = seq.POSIXt(from = start_date,
                         tz   = "UTC")
 
 
+time_start_in_seconds = as.numeric(interval(start = "2006-01-01 00:00:00 UTC",
+                                            end   = min(hour_time),
+                                            tzone = tz(start)) )
+
+time_end_in_seconds   = as.numeric(interval(start = "2006-01-01 00:00:00 UTC",
+                                            end   = max(hour_time),
+                                            tzone = tz(start)) )
+
+hourly_interval = as.double(3600)
+
+time_in_netcdf_units = seq(from = time_start_in_seconds, 
+                           to   = time_end_in_seconds, 
+                           by   =  hourly_interval)  
 
 ```
 
 We then interpolate between the various fields and frame them... 
 
+But first for precip we need a "nearest neighbor" intepolation function
+
+
+
 ```{r}
+
 
 targ_time_series                  = data.frame(date = hour_time)
 
@@ -466,26 +516,27 @@ targ_time_series$ISD_precip_01hr   = approx(x      = targ_data$date_time,
                                             method = "constant",
                                             xout   = hour_time)$y
 
-targ_time_series$ISD_precip_03hr   = approx(x      = targ_data$date_time,
-                                            y      = targ_data$precip_03hr,
-                                            method = "constant",
-                                            xout   = hour_time)$y
+#targ_time_series$ISD_precip_03hr   = approx(x      = targ_data$date_time,
+#                                            y      = targ_data$precip_03hr,
+#                                            method = "constant",
+#                                            xout   = hour_time)$y
 
-targ_time_series$ISD_precip_06hr   = approx(x      = targ_data$date_time,
-                                            y      = targ_data$precip_06hr,
-                                            method = "constant",
-                                            xout   = hour_time)$y
+#targ_time_series$ISD_precip_06hr   = approx(x      = targ_data$date_time,
+#                                            y      = targ_data$precip_06hr,
+#                                            method = "constant",
+#                                            xout   = hour_time)$y
 
 #targ_time_series$ISD_precip_12hr   = approx(x      = targ_data$date_time,
 #                                            y      = targ_data$precip_12hr,
 #                                            method = "constant",
 #                                            xout   = hour_time)$y
 
-targ_time_series$ISD_precip_24hr   = approx(x      = targ_data$date_time,
-                                            y      = targ_data$precip_24hr,
-                                            method = "constant",
-                                            xout   = hour_time)$y
-print(targ_time_series)
+#targ_time_series$ISD_precip_24hr   = approx(x      = targ_data$date_time,
+#                                            y      = targ_data$precip_24hr,
+#                                            method = "constant",
+#                                            xout   = hour_time)$y
+
+# print(targ_time_series)
 ```
 
 And send it to an ASCII file
@@ -505,12 +556,15 @@ write.table(x    = targ_time_series,
 
 ```
 
-
 Now let's make a "raw" datafile for all observations regardless what part of the hour they are taken.
 
 ```{r}
 
 targ_time_series_raw                      = data.frame(date = targ_data$date_time)
+
+targ_time_series_raw$data_product_code    = targ_data$type_code
+
+targ_time_series_raw$temperature          = targ_data$temperature
 targ_time_series_raw$temperature_dewpoint = targ_data$temperature_dewpoint
 targ_time_series_raw$cloud_cover_fraction = targ_data$GF1_total_cloud_cover_fraction
 targ_time_series_raw$air_pressure         = targ_data$air_pressure
@@ -519,10 +573,6 @@ targ_time_series_raw$wind_speed       = targ_data$wind_speed
 targ_time_series_raw$wind_dir_degrees = targ_data$wind_direction
 
 targ_time_series_raw$ISD_precip_01hr = targ_data$precip_01hr
-targ_time_series_raw$ISD_precip_03hr = targ_data$precip_03hr
-targ_time_series_raw$ISD_precip_06hr = targ_data$precip_06hr
-targ_time_series_raw$ISD_precip_12hr = targ_data$precip_12hr
-targ_time_series_raw$ISD_precip_24hr = targ_data$precip_24hr
 
   
 output_file_name = paste(file_title_string,
@@ -538,13 +588,427 @@ write.table(x    = targ_time_series_raw,
 
 ```
 
+This section prepeares the output for a formal NetCDF for the hourly data.  This will be followed by a second code block that will deal with the full data record.
 
-This section prepeares the output for a formal NetCDF file.
-
-This section is in preparation. 
-
+We start by create the dimensions and the varialbles to which they are assigned.  In this case, it's time.  We also want to keep this variable as having an unlimited size so that we can concatenate several files together.
 
 ```{r}
+
+netcdf_time_dim  = ncdim_def(name  = "time",
+                             units = "hours since 2006-01-01 00:00:00", 
+                             val   = as.double(time_in_netcdf_units)/as.double(3600),
+                             unlim = TRUE,
+                             calendar="standard")
+
+```
+
+Now we create the variables
+
+```{r}
+
+fill_value = 9.96921e+36
+
+netcdf_lat      = ncvar_def(nam      = "latitude",
+                             units    = "degrees_north",
+                             dim      = list(),
+                             missval  = fill_value,
+                             longname = "Latitude",
+                             prec     ="single")
+
+netcdf_lon      = ncvar_def(nam      = "longitude",
+                             units    = "degrees_east",
+                             dim      = list(),
+                             missval  = fill_value,
+                             longname = "Longitue",
+                             prec     ="single")
+
+netcdf_alt      = ncvar_def(nam      = "altitude",
+                             units    = "m",
+                             dim      = list(),
+                             missval  = fill_value,
+                             longname = "Elevation",
+                             prec     ="single")
+
+netcdf_temp      = ncvar_def(nam      = "air_temperature",
+                             units    = "deg_C",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "2-m Air Temperature",
+                             prec     ="single")
+
+netcdf_dewpoint  = ncvar_def(nam      = "dew_point_temperature",
+                             units    = "deg_C",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "2-m Dew Point Temperature",
+                             prec     ="single")
+
+netcdf_mslp      = ncvar_def(nam      = "air_pressure_at_mean_sea_level",
+                             units    = "hPa",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "Air Pressure Reduced to Mean Sea Level",
+                             prec     ="single")
+
+netcdf_cloud     = ncvar_def(nam      = "cloud_area_fraction",
+                             units    = "fraction",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "Message-Derived Cloud Cover Fraction",
+                             prec     ="single")
+
+netcdf_windspeed = ncvar_def(nam      = "wind_speed",
+                             units    = "m s-1",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "10-m Wind Speed",
+                             prec     ="single")
+
+netcdf_winddir   = ncvar_def(nam      = "wind_from_direction",
+                             units    = "degrees_from",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "10-m Wind Source Direction",
+                             prec     ="single")
+
+netcdf_prec      = ncvar_def(nam      = "precipitation_amount",
+                             units    = "kg m-2",
+                             dim      = netcdf_time_dim,
+                             missval  = fill_value,
+                             longname = "Hourly Precipitation",
+                             prec     ="single")
+
+```
+
+With these basics done we can now create the empty file.
+
+```{r}
+
+
+netcdf_output_file_name = paste(file_title_string,
+                                "_HOURLY_",
+                                target_year,
+                                ".nc",
+                                sep="")
+
+nc_hourly = nc_create(filename = netcdf_output_file_name, 
+                      vars     = list(netcdf_lat,
+                                      netcdf_lon,
+                                      netcdf_alt,
+                                      netcdf_temp,
+                                      netcdf_dewpoint,
+                                      netcdf_mslp,
+                                      netcdf_cloud,
+                                      netcdf_windspeed,
+                                      netcdf_winddir,
+                                      netcdf_prec), 
+                      force_v4 = FALSE, 
+                      verbose  = FALSE )
+
+
+
+```
+
+We can only assign at few attribute on file creation.  We now add some of the other ones.
+
+```{r}
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "Title", 
+          attval     = paste("NCEI Data Hourly Output for ",
+                             name_of_station,
+                             sep=""), 
+          prec       = NA, 
+          verbose    = TRUE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "WBAN_Number", 
+          attval     = as.integer(target_wban), 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "USAF_Number", 
+          attval     = as.integer(target_usaf), 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "Station_Name", 
+          attval     = name_of_station, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "Station_Latitude", 
+          attval     = station_lat, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "Station_Latitude", 
+          attval     = station_lon, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+```
+
+We should also add the standard names and suplementary descriptions for our variables.
+
+```{r}
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_prec, 
+          attname    = "standard_name", 
+          attval     = "precipitation_amount", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_prec, 
+          attname    = "description", 
+          attval     = "Hourly Precipitation", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_prec, 
+          attname    = "comment", 
+          attval     = "Precipitation amounts taken from FM-15 & SAO Messages", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_winddir, 
+          attname    = "standard_name", 
+          attval     = "wind_from_direction", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_winddir, 
+          attname    = "description", 
+          attval     = "10-m Wind Source Direction", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_windspeed, 
+          attname    = "standard_name", 
+          attval     = "wind_speed", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_windspeed, 
+          attname    = "description", 
+          attval     = "10-m Wind Speed", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_cloud, 
+          attname    = "standard_name", 
+          attval     = "cloud_area_fraction", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_cloud, 
+          attname    = "description", 
+          attval     = "Message-Derived Cloud Cover Fraction", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_mslp, 
+          attname    = "standard_name", 
+          attval     = "air_pressure_at_mean_sea_level", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_mslp, 
+          attname    = "description", 
+          attval     = "Air Pressure Reduced to Mean Sea Level", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_dewpoint, 
+          attname    = "standard_name", 
+          attval     = "dew_point_temperature", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_dewpoint, 
+          attname    = "description", 
+          attval     = "2-m Dew Point Temperature", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_temp, 
+          attname    = "standard_name", 
+          attval     = "air_temperature", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_temp, 
+          attname    = "description", 
+          attval     = "2-m Air Temperature", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_alt, 
+          attname    = "standard_name", 
+          attval     = "altitude", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_alt, 
+          attname    = "description", 
+          attval     = "Elevation", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_lon, 
+          attname    = "standard_name", 
+          attval     = "longitiude", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_lon, 
+          attname    = "description", 
+          attval     = "Longitude", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_lat, 
+          attname    = "standard_name", 
+          attval     = "latitude", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_lat, 
+          attname    = "description", 
+          attval     = "Latitude", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+#ncatt_put(nc         = nc_hourly, 
+#          varid      = netcdf_time_dim, 
+#          attname    = "standard_name", 
+#          attval     = "time", 
+#          prec       = NA, 
+#          verbose    = TRUE, 
+#          definemode = FALSE )
+
+#ncatt_put(nc         = nc_hourly, 
+#         varid      = netcdf_time_dim, 
+#         attname    = "description", 
+#         attval     = "Time", 
+#          prec       = NA, 
+#          verbose    = TRUE, 
+#          definemode = FALSE )
+
+```
+
+Finally, we can populate these fields with Data.
+
+```{r}
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_lat, 
+          vals    = station_lat, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_lon, 
+          vals    = station_lon, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_alt, 
+          vals    = station_alt, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_temp, 
+          vals    = targ_time_series$temperature_degC, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_dewpoint, 
+          vals    = targ_time_series$dewpoint_degC, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_mslp, 
+          vals    = targ_time_series$press_msl_hPa, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_cloud, 
+          vals    = targ_time_series$cloud_fraction, 
+          verbose = FALSE ) 
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_windspeed, 
+          vals    = targ_time_series$wind_spd_ms, 
+          verbose = FALSE )
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_winddir, 
+          vals    = targ_time_series$wind_dir_degrees, 
+          verbose = FALSE )
+
+ncvar_put(nc      = nc_hourly, 
+          varid   = netcdf_prec, 
+          vals    = targ_time_series$ISD_precip_01hr, 
+          verbose = FALSE )
 
 ```
 
