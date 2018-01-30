@@ -17,6 +17,7 @@ library("lubridate")
 library("ncdf4")
 library("dplyr")
 library("openair")
+library("rlist")
 
 ```
 
@@ -93,7 +94,7 @@ Specific Output for CITY:US460006
 
 total_number_of_stations = length(ncdc_ids$name)
 
-ncdc_index = 37  #20
+ncdc_index = 47  #20
   
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -133,40 +134,74 @@ ncdc_index = 37  #20
   
   remove(ncdc_data)
   
-  remove()
 
 ```
 
 
 ```{r}
 
+  if ("TMAX" %in% available_datafields)  {
+    tmax_full_field          = sorted_data$tmax
+      ordered                = order(tmax_full_field$date)
+      tmax_full_field$tmax[] = tmax_full_field$tmax[ordered] / 10
+      tmax_full_field$date[] = tmax_full_field$date[ordered] 
+  }
+    
+  if ("TMIN" %in% available_datafields)  {
+    tmin_full_field          = sorted_data$tmin
+      ordered                = order(tmin_full_field$date)
+      tmin_full_field$tmin[] = tmin_full_field$tmin[ordered] / 10
+      tmin_full_field$date[] = tmin_full_field$date[ordered] 
+  }
+    
+  if ("TAVG" %in% available_datafields)  {
+    tavg_full_field          = sorted_data$tavg
+      ordered                = order(tavg_full_field$date)
+      tavg_full_field$tavg[] = tavg_full_field$tavg[ordered] / 10
+      tavg_full_field$date[] = tavg_full_field$date[ordered] 
+      
+      print(tavg_full_field)
+  }
+      
+  if ("PRCP" %in% available_datafields)  {
+    prcp_full_field          = sorted_data$prcp
+      ordered                = order(prcp_full_field$date)
+      prcp_full_field$prcp[] = prcp_full_field$prcp[ordered] / 10
+      prcp_full_field$date[] = prcp_full_field$date[ordered] 
+  }
+      
+  if ("SNOW" %in% available_datafields)  {
+    snow_full_field          = sorted_data$snow
+      ordered                = order(snow_full_field$date)
+      snow_full_field$snow[] = snow_full_field$snow[ordered]
+      snow_full_field$date[] = snow_full_field$date[ordered] 
+  }
+      
+  if ("SNWD" %in% available_datafields)  {
+    snwd_full_field          = sorted_data$snwd
+      ordered                = order(snwd_full_field$date)
+      snwd_full_field$snwd[] = snwd_full_field$snwd[ordered]
+      snwd_full_field$date[] = snwd_full_field$date[ordered] 
+  }
 
-  tmax_full_field          = sorted_data$tmax
-    ordered                = order(tmax_full_field$date)
-    tmax_full_field$tmax[] = tmax_full_field$tmax[ordered] / 10
-    tmax_full_field$date[] = tmax_full_field$date[ordered] 
-  
-  tmin_full_field          = sorted_data$tmin
-    ordered                = order(tmin_full_field$date)
-    tmin_full_field$tmin[] = tmin_full_field$tmin[ordered] / 10
-    tmin_full_field$date[] = tmin_full_field$date[ordered] 
-    
-  prcp_full_field          = sorted_data$prcp
-    ordered                = order(prcp_full_field$date)
-    prcp_full_field$prcp[] = prcp_full_field$prcp[ordered] / 10
-    prcp_full_field$date[] = prcp_full_field$date[ordered] 
-    
-  snow_full_field          = sorted_data$snow
-    ordered                = order(snow_full_field$date)
-    snow_full_field$snow[] = snow_full_field$snow[ordered]
-    snow_full_field$date[] = snow_full_field$date[ordered] 
-    
-  snwd_full_field          = sorted_data$snwd
-    ordered                = order(snwd_full_field$date)
-    snwd_full_field$snwd[] = snwd_full_field$snwd[ordered]
-    snwd_full_field$date[] = snwd_full_field$date[ordered] 
-    
-  remove(sorted_data)
+      
+  if ("WESD" %in% available_datafields)  {
+    wesd_full_field          = sorted_data$wesd
+      ordered                = order(wesd_full_field$date)
+      wesd_full_field$wesd[] = wesd_full_field$wesd[ordered] / 10
+      wesd_full_field$date[] = wesd_full_field$date[ordered] 
+  }
+
+      
+  if ("WESF" %in% available_datafields)  {
+    wesf_full_field          = sorted_data$wesf
+      ordered                = order(wesf_full_field$date)
+      wesf_full_field$wesf[] = wesf_full_field$wesf[ordered] / 10
+      wesf_full_field$date[] = wesf_full_field$date[ordered] 
+  }
+            
+  remove(sorted_data,
+         ordered)
 
 ```
 
@@ -180,49 +215,110 @@ ncdc_index = 37  #20
                          min(Days_from_1970_01_01) + 
                          1
   
-  nd = length(index_days)
+  new_variable   = Days_from_1970_01_01
+  new_variable[] = NA
   
-  tmax   = Days_from_1970_01_01
-  tmax[] = NA
-  tmin   = tmax
-  prcp   = tmax
-  snow   = tmax
-  snwd   = tmax
-  
-  index_tmax =  as.numeric(tmax_full_field$date) - Days_from_1970_01_01[1] + 1
-  index_tmin =  as.numeric(tmin_full_field$date) - Days_from_1970_01_01[1] + 1
-  index_prcp =  as.numeric(prcp_full_field$date) - Days_from_1970_01_01[1] + 1
-  index_snow =  as.numeric(snow_full_field$date) - Days_from_1970_01_01[1] + 1
-  index_snwd =  as.numeric(snwd_full_field$date) - Days_from_1970_01_01[1] + 1
-  
-  index_tmax = index_tmax[which(index_tmax<=max(index_days))]
-  index_tmin = index_tmin[which(index_tmin<=max(index_days))]
-  index_prcp = index_prcp[which(index_prcp<=max(index_days))]
-  index_snow = index_snow[which(index_snow<=max(index_days))]
-  index_snwd = index_snwd[which(index_snwd<=max(index_days))]
-  
-  tmax[index_tmax] = tmax_full_field$tmax[index_tmax]
-  tmin[index_tmin] = tmin_full_field$tmin[index_tmin]
-  prcp[index_prcp] = prcp_full_field$prcp[index_prcp]
-  snow[index_snow] = snow_full_field$snow[index_snow]
-  snwd[index_snwd] = snwd_full_field$snwd[index_snwd]
-
-
-  remove(tmax_full_field,
-         tmin_full_field,
-         prcp_full_field,
-         snow_full_field,
-         snwd_full_field)
-  
+  if ("TMAX" %in% available_datafields)  {
+    tmax             = new_variable
+    index_tmax       = as.numeric(tmax_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_tmax       = index_tmax[which(index_tmax <= max(index_days)) ]
+    index_tmax       = index_tmax[which(index_tmax >= min(index_days)) ]
+    tmax[index_tmax] = tmax_full_field$tmax[index_tmax]
+    print(index_tmax)
+    remove(tmax_full_field,
+           index_tmax)
     
-    remove(index_days,
-         index_tmax,
-         index_tmin,
-         index_prcp,
-         index_snow,
-         index_snwd)
-
-
+    
+    
+    
+    
+  }
+    
+  if ("TMIN" %in% available_datafields)  {
+    tmin             = new_variable
+    index_tmin       = as.numeric(tmin_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_tmin       = index_tmin[which(index_tmin <= max(index_days)) ]
+    index_tmin       = index_tmin[which(index_tmin >= min(index_days)) ]
+    tmin[index_tmin] = tmin_full_field$tmin[index_tmin]
+    remove(tmin_full_field,
+           index_tmin)
+  }
+    
+  if ("TAVG" %in% available_datafields)  {
+    
+    
+    
+    tavg             = new_variable
+    
+    tavg_date        = tavg_full_field$date[ tavg_full_field$date <= max(Date) ]
+    tavg_date        = tavg_date[ tavg_date >=  min(Date) ] 
+    tavg[which(as.numeric(Date) == as.numeric(tavg_date))] = tavg_full_field$tavg[which(Date == tavg_date)]
+      
+      
+      
+      
+    index_tavg        = as.numeric(tavg_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_tavg       = index_tavg[which(index_tavg <= max(index_days)) ]
+    index_tavg       = index_tavg[which(index_tavg >= min(index_days)) ]
+    tavg[index_tavg] = tavg_full_field$tavg[index_tavg]
+    print(index_tavg)
+    remove(tavg_full_field,
+           index_tavg)
+  }    
+  
+  
+  if ("PRCP" %in% available_datafields)  {
+    prcp             = new_variable
+    index_prcp       = as.numeric(prcp_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_prcp       = index_prcp[which(index_prcp <= max(index_days)) ]
+    index_prcp       = index_prcp[which(index_prcp >= min(index_days)) ]
+    prcp[index_prcp] = prcp_full_field$prcp[index_prcp]
+    remove(prcp_full_field,
+           index_prcp)
+  }
+       
+  if ("SNOW" %in% available_datafields)  {
+    snow             = new_variable
+    index_snow       = as.numeric(snow_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_snow       = index_snow[which(index_snow <= max(index_days)) ]
+    index_snow       = index_snow[which(index_snow >= min(index_days)) ]
+    snow[index_snow] = snow_full_field$snow[index_snow]
+    remove(snow_full_field,
+           index_snow)
+  }
+    
+  if ("SNWD" %in% available_datafields)  {
+    snwd             = new_variable
+    index_snwd       = as.numeric(snwd_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_snwd       = index_snwd[which(index_snwd <= max(index_days)) ]
+    index_snwd       = index_snwd[which(index_snwd >= min(index_days)) ]
+    snwd[index_snwd] = snwd_full_field$snwd[index_snwd]
+    remove(snwd_full_field,
+           index_snwd)
+  }
+      
+  if ("WESD" %in% available_datafields)  {
+    wesd             = new_variable
+    index_wesd       = as.numeric(wesd_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_wesd       = index_wesd[which(index_wesd <= max(index_days)) ]
+    index_wesd       = index_wesd[which(index_wesd >= min(index_days)) ]
+    wesd[index_wesd] = wesd_full_field$wesd[index_wesd]
+    remove(wesd_full_field,
+           index_wesd)
+  }
+    
+  if ("WESF" %in% available_datafields)  {
+    wesf             = new_variable
+    index_wesf       = as.numeric(wesf_full_field$date) - Days_from_1970_01_01[1] + 1
+    index_wesf       = index_wesf[which(index_wesf <= max(index_days)) ]
+    index_wesf       = index_wesf[which(index_wesf >= min(index_days)) ]
+    wesf[index_wesf] = wesf_full_field$wesf[index_wesf]
+    remove(wesf_full_field,
+           index_wesf)
+  }
+        
+  remove(new_variable,
+         index_days)
 
 ```
 
@@ -230,16 +326,18 @@ Plot Max Temperature
 
 ```{r}
 
-  plot(x       = Date,
-       y       = tmax, 
-       type    = "p", 
-       pch     = ".",   # as points
-       col     = "red", 
-       lwd     = 1.5, 
-       cex.lab = 1.25,
-       xlab    = "Date", 
-       ylab    = "Max Temperature (deg C)",
-       main    = station_name_label)
+  if ("TMAX" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = tmax, 
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "red", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Max Temperature (deg C)",
+         main    = station_name_label)
+  }
 
 
 ```
@@ -248,16 +346,18 @@ Plot Min Temperatures
 
 ```{r}
 
-  plot(x       = Date,
-       y       = tmin, 
-       type    = "p", 
-       pch     = ".",   # as points
-       col     = "darkgreen", 
-       lwd     = 1.5, 
-       cex.lab = 1.25,
-       xlab    = "Date", 
-       ylab    = "Min Temperature (deg C)",
-       main    = station_name_label)
+  if ("TMIN" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = tmin, 
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "darkgreen", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Min Temperature (deg C)",
+         main    = station_name_label)
+  }
 
 ```
 
@@ -265,16 +365,18 @@ Plot Precip
 
 ```{r}
 
-  plot(x       = Date,
-       y       = prcp, 
-       type    = "p", 
-       pch     = ".",   # as points
-       col     = "green", 
-       lwd     = 1.5, 
-       cex.lab = 1.25,
-       xlab    = "Date", 
-       ylab    = "Daily Precip (mm)",
-       main    = station_name_label)
+  if ("PRCP" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = prcp, 
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "green", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Daily Precip (mm)",
+         main    = station_name_label)
+  }
 
 ```
 
@@ -282,16 +384,18 @@ Plot Snow
 
 ```{r}
 
-  plot(x       = Date,
-       y       = snow, 
-       type    = "p", 
-       pch     = ".",   # as points
-       col     = "cyan", 
-       lwd     = 1.5, 
-       cex.lab = 1.25,
-       xlab    = "Date", 
-       ylab    = "Daily Snowfall (mm)",
-       main    = station_name_label)
+  if ("SNOW" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = snow, 
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "cyan", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Daily Snowfall (mm)",
+         main    = station_name_label)
+  }
 
 ```
 
@@ -299,16 +403,18 @@ Plot Snow Depth
 
 ```{r}
 
-  plot(x       = Date,
-       y       = snwd,
-       type    = "p", 
-       pch     = ".",   # as points
-       col     = "darkblue", 
-       lwd     = 1.5, 
-       cex.lab = 1.25,
-       xlab    = "Date", 
-       ylab    = "Daily Snowfall (mm)",
-       main    = station_name_label)
+  if ("SNWD" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = snwd,
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "darkblue", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Daily Snowfall (mm)",
+         main    = station_name_label)
+  }
 
 ```
 
@@ -317,22 +423,38 @@ Convert to a CSV File.
 ```{r}
 
 
-  targ_time_series_raw                      = data.frame(date = Date)
+  targ_time_series_raw = data.frame(date = Date)
   
+  if ("TMAX" %in% available_datafields) 
+    targ_time_series_raw$max_temperature       = tmax
 
-  
-  targ_time_series_raw$max_temperature = tmax
-  targ_time_series_raw$min_temperature = tmin
-  targ_time_series_raw$precipitation   = prcp
-  targ_time_series_raw$snowfall        = snow
-  targ_time_series_raw$snowdepth       = snwd
+  if ("TMIN" %in% available_datafields) 
+    targ_time_series_raw$min_temperature       = tmin
+
+  if ("TAVG" %in% available_datafields) 
+    targ_time_series_raw$mean_temperature      = tavg
+
+  if ("PRCP" %in% available_datafields) 
+    targ_time_series_raw$precipitation         = prcp
+
+  if ("SNOW" %in% available_datafields)
+    targ_time_series_raw$snowfall              = snow
+
+  if ("SNWD" %in% available_datafields)
+    targ_time_series_raw$snowdepth             = snwd
+
+  if ("WESD" %in% available_datafields)
+    targ_time_series_raw$snowdepth_water_equiv = wesd
+
+  if ("WESF" %in% available_datafields)
+    targ_time_series_raw$snowfall_water_equiv  = wesf
 
   
     
   output_file_name = paste(file_title_string,
                            ".csv",
                            sep="")
-  
+    
   write.table(x    = targ_time_series_raw, 
               file = output_file_name, 
               sep  =", ",
@@ -358,171 +480,145 @@ NetCDF Output
 ```{r}
 
   fill_value = 9.96921e+36
-  
-  netcdf_lat      = ncvar_def(nam      = "latitude",
-                               units    = "degrees_north",
-                               dim      = list(),
-                               missval  = fill_value,
-                               longname = "Latitude",
-                               prec     = "single")
-  
-  netcdf_lon      = ncvar_def(nam      = "longitude",
-                               units    = "degrees_east",
-                               dim      = list(),
-                               missval  = fill_value,
-                               longname = "Longitue",
-                               prec     = "single")
-  
-  netcdf_alt      = ncvar_def(nam      = "altitude",
-                               units    = "m",
-                               dim      = list(),
-                               missval  = fill_value,
-                               longname = "Elevation",
-                               prec     = "single")
-  
-  
-  netcdf_tmax      = ncvar_def(nam      = "maximum_air_temperature",
-                               units    = "deg C",
-                               dim      = netcdf_time_dim,
-                               missval  = fill_value,
-                               longname = "2-m Maximum Daily Air Temperature",
-                               prec     = "single")
 
-  netcdf_tmin      = ncvar_def(nam      = "minimum_air_temperature",
-                               units    = "deg C",
-                               dim      = netcdf_time_dim,
-                               missval  = fill_value,
-                               longname = "2-m Minimium Daily Air Temperature",
-                               prec     = "single")
   
-  netcdf_prcp      = ncvar_def(nam      = "precipitation_amount",
-                               units    = "kg m-2",
-                               dim      = netcdf_time_dim,
-                               missval  = fill_value,
-                               longname = "Daily Total Precipitation",
-                               prec     = "single")
+  netcdf_lat = ncvar_def(nam      = "latitude",
+                         units    = "degrees_north",
+                         dim      = list(),
+                         missval  = fill_value,
+                         longname = "Latitude",
+                         prec     = "single")
   
-  netcdf_snow      = ncvar_def(nam      = "snowfall_amount",
-                               units    = "kg m-2",
-                               dim      = netcdf_time_dim,
-                               missval  = fill_value,
-                               longname = "Daily Total Snowfall",
-                               prec     = "single")
+  netcdf_lon = ncvar_def(nam      = "longitude",
+                         units    = "degrees_east",
+                         dim      = list(),
+                         missval  = fill_value,
+                         longname = "Longitue",
+                         prec     = "single")
   
-  netcdf_snwd      = ncvar_def(nam      = "surface_snow_thickness",
-                               units    = "mm",
-                               dim      = netcdf_time_dim,
-                               missval  = fill_value,
-                               longname = "Snow Depth on Surface",
-                               prec     = "single")
+  netcdf_alt = ncvar_def(nam      = "altitude",
+                         units    = "m",
+                         dim      = list(),
+                         missval  = fill_value,
+                         longname = "Elevation",
+                         prec     = "single")
+  
+  
+  netcdf_available_variables = list(netcdf_lat,
+                                    netcdf_lon,
+                                    netcdf_alt)
+
+  
+  if ("TMAX" %in% available_datafields) {
+    netcdf_tmax = ncvar_def(nam      = "maximum_air_temperature",
+                            units    = "deg C",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "2-m Maximum Daily Air Temperature",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_tmax)
+  }
+  
+  if ("TMIN" %in% available_datafields) {
+    netcdf_tmin = ncvar_def(nam      = "minimum_air_temperature",
+                            units    = "deg C",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "2-m Minimium Daily Air Temperature",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_tmin)
+  }
+
+    
+  if ("TAVG" %in% available_datafields) {
+    netcdf_tavg = ncvar_def(nam      = "average_air_temperature",
+                            units    = "deg C",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "2-m Mean Daily Air Temperature",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_tavg)
+  }
+    
+  if ("PRCP" %in% available_datafields) {
+    netcdf_prcp = ncvar_def(nam      = "precipitation_amount",
+                            units    = "kg m-2",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Daily Total Precipitation",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_prcp)
+  }
+    
+  if ("SNOW" %in% available_datafields) {
+    netcdf_snow = ncvar_def(nam      = "snowfall_amount",
+                            units    = "kg m-2",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Daily Total Snowfall",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_snow)
+  }
+    
+  if ("SNWD" %in% available_datafields) {
+    netcdf_snwd = ncvar_def(nam      = "surface_snow_thickness",
+                            units    = "mm",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Snow Depth on Surface",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_snwd)  
+  }
+  
+    
+  if ("WESD" %in% available_datafields) {
+    netcdf_wesd = ncvar_def(nam      = "liquid_water_content_of_surface_snow",
+                            units    = "kg m-2",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Liquid Snow Water Equivalent Depth on Surface",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_wesd)  
+  }
+  
+  if ("WESF" %in% available_datafields) {
+    netcdf_wesf = ncvar_def(nam      = "liquid_water_content_of_snowfall_amount",
+                            units    = "kg m-2",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Liquid Snow Water Equivalent Depth on Surface",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_wesf)  
+  }
   
   
 ```
 
 
 ```{r}
+
   netcdf_output_file_name = paste(file_title_string,
                                   ".nc",
                                   sep="")
   
   nc_ghcn = nc_create(filename = netcdf_output_file_name, 
-                        vars     = list(netcdf_lat,
-                                        netcdf_lon,
-                                        netcdf_alt,
-                                        netcdf_tmax,
-                                        netcdf_tmin,
-                                        netcdf_prcp,
-                                        netcdf_snow,
-                                        netcdf_snwd), 
+                        vars     = netcdf_available_variables, 
                         force_v4 = FALSE, 
                         verbose  = FALSE )
-
 
 ```
 
 
 ```{r}
 
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_prcp, 
-            attname    = "standard_name", 
-            attval     = "precipitation_amount", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_prcp, 
-            attname    = "description", 
-            attval     = "Daily Total Precipitation",
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_snow, 
-            attname    = "standard_name", 
-            attval     = "snowfall_amount", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_snow, 
-            attname    = "description", 
-            attval     = "Daily Total Snowfall", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_snwd, 
-            attname    = "standard_name", 
-            attval     = "surface_snow_thickness", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_snwd, 
-            attname    = "description", 
-            attval     = "Snow Depth on Surface", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_tmin, 
-            attname    = "standard_name", 
-            attval     = "minimum_air_temperature", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_tmin, 
-            attname    = "description", 
-            attval     = "2-m Minimium Daily Air Temperature",
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_tmax, 
-            attname    = "standard_name", 
-            attval     = "maximum_air_temperature", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
-  ncatt_put(nc         = nc_ghcn, 
-            varid      = netcdf_tmax, 
-            attname    = "description", 
-            attval     = "2-m Minimium Daily Air Temperature", 
-            prec       = NA, 
-            verbose    = FALSE, 
-            definemode = FALSE )
-  
   ncatt_put(nc         = nc_ghcn, 
             varid      = netcdf_alt, 
             attname    = "standard_name", 
@@ -538,6 +634,8 @@ NetCDF Output
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+  
+  
   
   ncatt_put(nc         = nc_ghcn, 
             varid      = netcdf_lon, 
@@ -555,6 +653,8 @@ NetCDF Output
             verbose    = FALSE, 
             definemode = FALSE )
   
+  
+  
   ncatt_put(nc         = nc_ghcn, 
             varid      = netcdf_lat, 
             attname    = "standard_name", 
@@ -570,6 +670,158 @@ NetCDF Output
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+  
+  
+
+  if ("TMAX" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_tmax, 
+              attname    = "standard_name", 
+              attval     = "maximum_air_temperature", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_tmax, 
+              attname    = "description", 
+              attval     = "2-m Minimium Daily Air Temperature", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+    
+  if ("TMIN" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_tmin, 
+              attname    = "standard_name", 
+              attval     = "minimum_air_temperature", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_tmin, 
+              attname    = "description", 
+              attval     = "2-m Minimium Daily Air Temperature",
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+  
+  if ("TAVG" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_tavg, 
+              attname    = "standard_name", 
+              attval     = "average_air_temperature", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_tavg, 
+              attname    = "description", 
+              attval     = "2-m Mean Daily Air Temperature",
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+  
+  
+  
+  
+  if ("PRCP" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_prcp, 
+              attname    = "standard_name", 
+              attval     = "precipitation_amount", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_prcp, 
+              attname    = "description", 
+              attval     = "Daily Total Precipitation",
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    }
+    
+  if ("SNOW" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_snow, 
+              attname    = "standard_name", 
+              attval     = "snowfall_amount", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_snow, 
+              attname    = "description", 
+              attval     = "Daily Total Snowfall", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+    
+  if ("SNWD" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_snwd, 
+              attname    = "standard_name", 
+              attval     = "surface_snow_thickness", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_snwd, 
+              attname    = "description", 
+              attval     = "Snow Depth on Surface", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+
+      
+  if ("WSED" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_wesd, 
+              attname    = "standard_name", 
+              attval     = "liquid_water_content_of_surface_snow", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_wesd, 
+              attname    = "description", 
+              attval     = "Liquid Snow Water Equivalent Depth on Surface", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+
+        
+  if ("WSEF" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_wesf, 
+              attname    = "standard_name", 
+              attval     = "liquid_water_content_of_snowfall_amount", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_wesf, 
+              attname    = "description", 
+              attval     = "Liquid Snowfall Water Equivalent", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+
 ```
 
 
@@ -579,62 +831,106 @@ NetCDF Output
             varid   = netcdf_lat, 
             vals    = station_latitude, 
             verbose = FALSE ) 
+  remove(netcdf_lat,
+         station_latitude)   
   
   ncvar_put(nc      = nc_ghcn, 
             varid   = netcdf_lon, 
             vals    = station_longitude, 
             verbose = FALSE ) 
+  remove(netcdf_lon,
+         station_longitude)  
   
   ncvar_put(nc      = nc_ghcn, 
             varid   = netcdf_alt, 
             vals    = station_altitude, 
             verbose = FALSE ) 
+  remove(netcdf_alt,
+         station_altitude)  
+    
+ 
+  if ("TMAX" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_tmax, 
+              vals    = tmax, 
+              verbose = FALSE ) 
+    remove(netcdf_tmax,
+           tmax)  
+    }
+    
+  if ("TMIN" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_tmin, 
+              vals    = tmin, 
+              verbose = FALSE ) 
+    remove(netcdf_tmin,
+           tmin)  
+    }
+
+      
+  if ("TAVG" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_tavg, 
+              vals    = tavg, 
+              verbose = FALSE ) 
+    remove(netcdf_tavg,
+           tavg)  
+    }
+
+     
+  if ("PRCP" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_prcp, 
+              vals    = prcp, 
+              verbose = FALSE ) 
+    remove(netcdf_prcp,
+           prcp)  
+    }
+    
+  if ("SNOW" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_snow, 
+              vals    = snow, 
+              verbose = FALSE ) 
+    remove(netcdf_snow,
+           snow)  
+    }
+    
+  if ("SNWD" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_snwd, 
+              vals    = snwd, 
+              verbose = FALSE ) 
+    remove(netcdf_snwd,
+           snwd)
+  }
   
-  ncvar_put(nc      = nc_ghcn, 
-            varid   = netcdf_tmax, 
-            vals    = tmax, 
-            verbose = FALSE ) 
-  
-  ncvar_put(nc      = nc_ghcn, 
-            varid   = netcdf_tmin, 
-            vals    = tmin, 
-            verbose = FALSE ) 
-  
-  ncvar_put(nc      = nc_ghcn, 
-            varid   = netcdf_prcp, 
-            vals    = prcp, 
-            verbose = FALSE ) 
-  
-  ncvar_put(nc      = nc_ghcn, 
-            varid   = netcdf_snow, 
-            vals    = snow, 
-            verbose = FALSE ) 
-  
-  ncvar_put(nc      = nc_ghcn, 
-            varid   = netcdf_snwd, 
-            vals    = snwd, 
-            verbose = FALSE ) 
-  
+  if ("WESD" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_wesd, 
+              vals    = wesd, 
+              verbose = FALSE ) 
+    remove(netcdf_wesd,
+           wesd)
+  }  
+
+  if ("WESF" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_wesf, 
+              vals    = wesf, 
+              verbose = FALSE ) 
+    remove(netcdf_wesf,
+           wesf)
+  }  
+    
+    
   nc_close( nc_ghcn )
   
   remove(nc_ghcn,
-         netcdf_time_dim,
-         netcdf_alt,
-         netcdf_lat,
-         netcdf_lon,
-         netcdf_tmax,
-         netcdf_tmin,
-         netcdf_prcp,
-         netcdf_snow,
-         netcdf_snwd)
+         netcdf_time_dim)
 
   remove(Date,
-         Days_from_1970_01_01,
-         tmax,
-         tmin,
-         prcp,
-         snow,
-         snwd)
+         Days_from_1970_01_01)
   
 
   
