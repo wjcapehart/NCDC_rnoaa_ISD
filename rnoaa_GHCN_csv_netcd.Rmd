@@ -91,7 +91,9 @@ Specific Output for CITY:US460006
 
 ```{r}
 
-  ncdc_index = 47 #20
+total_number_of_stations = length(ncdc_ids$name)
+
+ncdc_index = 37  #20
   
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -109,9 +111,6 @@ Specific Output for CITY:US460006
   Date = seq(from = as.Date(ncdc_start_yymmdd), 
              to   = as.Date(ncdc_end_yymmdd), 
              by   = "days")
-  
-  split_ncdc = unlist(strsplit(x      = ncdc_id_code,
-                               split  = ":"))
   
   ncdc_data = ghcnd(stationid = ghcn_station_code[2])
   
@@ -133,6 +132,8 @@ Specific Output for CITY:US460006
                             sep="")
   
   remove(ncdc_data)
+  
+  remove()
 
 ```
 
@@ -205,6 +206,21 @@ Specific Output for CITY:US460006
   prcp[index_prcp] = prcp_full_field$prcp[index_prcp]
   snow[index_snow] = snow_full_field$snow[index_snow]
   snwd[index_snwd] = snwd_full_field$snwd[index_snwd]
+
+
+  remove(tmax_full_field,
+         tmin_full_field,
+         prcp_full_field,
+         snow_full_field,
+         snwd_full_field)
+  
+    
+    remove(index_days,
+         index_tmax,
+         index_tmin,
+         index_prcp,
+         index_snow,
+         index_snwd)
 
 
 
@@ -305,11 +321,11 @@ Convert to a CSV File.
   
 
   
-  targ_time_series_raw$max_temperature = targ_data$tmax
-  targ_time_series_raw$min_temperature = targ_data$tmin
-  targ_time_series_raw$precipitation   = targ_data$pcpn
-  targ_time_series_raw$snowfall        = targ_data$snow
-  targ_time_series_raw$snowdepth       = targ_data$snwd
+  targ_time_series_raw$max_temperature = tmax
+  targ_time_series_raw$min_temperature = tmin
+  targ_time_series_raw$precipitation   = prcp
+  targ_time_series_raw$snowfall        = snow
+  targ_time_series_raw$snowdepth       = snwd
 
   
     
@@ -322,9 +338,306 @@ Convert to a CSV File.
               sep  =", ",
               row.names = FALSE)
 
+  
+  remove(targ_time_series_raw)
+
 ```
  
+NetCDF Output
 
+```{r}
+
+  netcdf_time_dim  = ncdim_def(name  = "time",
+                               units = "days since 1970-01-01 00:00:00", 
+                               val   = Days_from_1970_01_01,
+                               unlim = TRUE,
+                               calendar="standard")
+
+```
+
+```{r}
+
+  fill_value = 9.96921e+36
+  
+  netcdf_lat      = ncvar_def(nam      = "latitude",
+                               units    = "degrees_north",
+                               dim      = list(),
+                               missval  = fill_value,
+                               longname = "Latitude",
+                               prec     = "single")
+  
+  netcdf_lon      = ncvar_def(nam      = "longitude",
+                               units    = "degrees_east",
+                               dim      = list(),
+                               missval  = fill_value,
+                               longname = "Longitue",
+                               prec     = "single")
+  
+  netcdf_alt      = ncvar_def(nam      = "altitude",
+                               units    = "m",
+                               dim      = list(),
+                               missval  = fill_value,
+                               longname = "Elevation",
+                               prec     = "single")
+  
+  
+  netcdf_tmax      = ncvar_def(nam      = "maximum_air_temperature",
+                               units    = "deg C",
+                               dim      = netcdf_time_dim,
+                               missval  = fill_value,
+                               longname = "2-m Maximum Daily Air Temperature",
+                               prec     = "single")
+
+  netcdf_tmin      = ncvar_def(nam      = "minimum_air_temperature",
+                               units    = "deg C",
+                               dim      = netcdf_time_dim,
+                               missval  = fill_value,
+                               longname = "2-m Minimium Daily Air Temperature",
+                               prec     = "single")
+  
+  netcdf_prcp      = ncvar_def(nam      = "precipitation_amount",
+                               units    = "kg m-2",
+                               dim      = netcdf_time_dim,
+                               missval  = fill_value,
+                               longname = "Daily Total Precipitation",
+                               prec     = "single")
+  
+  netcdf_snow      = ncvar_def(nam      = "snowfall_amount",
+                               units    = "kg m-2",
+                               dim      = netcdf_time_dim,
+                               missval  = fill_value,
+                               longname = "Daily Total Snowfall",
+                               prec     = "single")
+  
+  netcdf_snwd      = ncvar_def(nam      = "surface_snow_thickness",
+                               units    = "mm",
+                               dim      = netcdf_time_dim,
+                               missval  = fill_value,
+                               longname = "Snow Depth on Surface",
+                               prec     = "single")
+  
+  
+```
+
+
+```{r}
+  netcdf_output_file_name = paste(file_title_string,
+                                  ".nc",
+                                  sep="")
+  
+  nc_ghcn = nc_create(filename = netcdf_output_file_name, 
+                        vars     = list(netcdf_lat,
+                                        netcdf_lon,
+                                        netcdf_alt,
+                                        netcdf_tmax,
+                                        netcdf_tmin,
+                                        netcdf_prcp,
+                                        netcdf_snow,
+                                        netcdf_snwd), 
+                        force_v4 = FALSE, 
+                        verbose  = FALSE )
+
+
+```
+
+
+```{r}
+
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_prcp, 
+            attname    = "standard_name", 
+            attval     = "precipitation_amount", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_prcp, 
+            attname    = "description", 
+            attval     = "Daily Total Precipitation",
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_snow, 
+            attname    = "standard_name", 
+            attval     = "snowfall_amount", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_snow, 
+            attname    = "description", 
+            attval     = "Daily Total Snowfall", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_snwd, 
+            attname    = "standard_name", 
+            attval     = "surface_snow_thickness", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_snwd, 
+            attname    = "description", 
+            attval     = "Snow Depth on Surface", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_tmin, 
+            attname    = "standard_name", 
+            attval     = "minimum_air_temperature", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_tmin, 
+            attname    = "description", 
+            attval     = "2-m Minimium Daily Air Temperature",
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_tmax, 
+            attname    = "standard_name", 
+            attval     = "maximum_air_temperature", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_tmax, 
+            attname    = "description", 
+            attval     = "2-m Minimium Daily Air Temperature", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_alt, 
+            attname    = "standard_name", 
+            attval     = "altitude", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_alt, 
+            attname    = "description", 
+            attval     = "Elevation", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_lon, 
+            attname    = "standard_name", 
+            attval     = "longitiude", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_lon, 
+            attname    = "description", 
+            attval     = "Longitude", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_lat, 
+            attname    = "standard_name", 
+            attval     = "latitude", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn, 
+            varid      = netcdf_lat, 
+            attname    = "description", 
+            attval     = "Latitude", 
+            prec       = NA, 
+            verbose    = FALSE, 
+            definemode = FALSE )
+```
+
+
+```{r}
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_lat, 
+            vals    = station_latitude, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_lon, 
+            vals    = station_longitude, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_alt, 
+            vals    = station_altitude, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_tmax, 
+            vals    = tmax, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_tmin, 
+            vals    = tmin, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_prcp, 
+            vals    = prcp, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_snow, 
+            vals    = snow, 
+            verbose = FALSE ) 
+  
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_snwd, 
+            vals    = snwd, 
+            verbose = FALSE ) 
+  
+  nc_close( nc_ghcn )
+  
+  remove(nc_ghcn,
+         netcdf_time_dim,
+         netcdf_alt,
+         netcdf_lat,
+         netcdf_lon,
+         netcdf_tmax,
+         netcdf_tmin,
+         netcdf_prcp,
+         netcdf_snow,
+         netcdf_snwd)
+
+  remove(Date,
+         Days_from_1970_01_01,
+         tmax,
+         tmin,
+         prcp,
+         snow,
+         snwd)
+  
+
+  
 
 ```
 

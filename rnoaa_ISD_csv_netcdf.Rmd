@@ -1010,5 +1010,7 @@ ncvar_put(nc      = nc_hourly,
           vals    = targ_time_series$ISD_precip_01hr, 
           verbose = FALSE )
 
+nc_close( nc_hourly )
+
 ```
 
