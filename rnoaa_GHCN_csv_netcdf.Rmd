@@ -93,7 +93,7 @@ Specific Output for CITY:US460006
 
 total_number_of_stations = length(ncdc_ids$name)
 
-ncdc_index = 46  #20
+ncdc_index = 47  #20
   
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -674,18 +674,36 @@ NetCDF Output
 
 ```{r}
 
+
+  netcdf_output_file_name = paste(file_title_string,
+                                  ".nc",
+                                  sep="")
+
   netcdf_time_dim  = ncdim_def(name  = "time",
                                units = "days since 1970-01-01 00:00:00", 
                                val   = Days_from_1970_01_01,
                                unlim = TRUE,
                                calendar="standard")
 
+  netcdf_name_dim  = ncdim_def(name  = "name_strlen",
+                               units = "", 
+                               val   = 1:nchar(file_title_string),
+                               unlim = FALSE,
+                               create_dimvar=FALSE)
 ```
 
 ```{r}
 
   fill_value = 9.96921e+36
 
+   
+  netcdf_stn = ncvar_def(nam      = "station_name",
+                         units    = "",
+                         dim      = netcdf_name_dim,
+                         missval  = NULL,
+                         longname = "station name",
+                         prec     = "char")
+  
   
   netcdf_lat = ncvar_def(nam      = "latitude",
                          units    = "degrees_north",
@@ -711,7 +729,8 @@ NetCDF Output
   
   netcdf_available_variables = list(netcdf_lat,
                                     netcdf_lon,
-                                    netcdf_alt)
+                                    netcdf_alt,
+                                    netcdf_stn)
 
   
   if ("TMAX" %in% available_datafields) {
@@ -834,14 +853,77 @@ NetCDF Output
 
 ```{r}
 
-  netcdf_output_file_name = paste(file_title_string,
-                                  ".nc",
-                                  sep="")
   
   nc_ghcn = nc_create(filename = netcdf_output_file_name, 
                         vars     = netcdf_available_variables, 
                         force_v4 = FALSE, 
                         verbose  = FALSE )
+
+```
+
+
+```{r}
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "Title", 
+          attval     = paste("NCEI Data Hourly Output for ",
+                             station_name_label,
+                             sep=""), 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "GHCN_Station_Code", 
+          attval     = ncdc_id_code, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "Station_Name", 
+          attval     = station_name_label, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "Station_Latitude", 
+          attval     = station_latitude, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "Station_Longitude", 
+          attval     = station_longitude, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "Station_Elevation_in_Meters", 
+          attval     = station_altitude, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
+ncatt_put(nc         = nc_ghcn, 
+          varid      = 0, 
+          attname    = "featureType", 
+          attval     = "timeSeries", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE)
+
+
+
 
 ```
 
@@ -864,8 +946,6 @@ NetCDF Output
             verbose    = FALSE, 
             definemode = FALSE )
   
-  
-  
   ncatt_put(nc         = nc_ghcn, 
             varid      = netcdf_lon, 
             attname    = "standard_name", 
@@ -881,8 +961,6 @@ NetCDF Output
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
-  
-  
   
   ncatt_put(nc         = nc_ghcn, 
             varid      = netcdf_lat, 
@@ -1113,6 +1191,12 @@ NetCDF Output
             varid   = netcdf_alt, 
             vals    = station_altitude, 
             verbose = FALSE ) 
+
+  ncvar_put(nc      = nc_ghcn, 
+            varid   = netcdf_stn,
+            vals    = file_title_string,
+            verbose = FALSE )   
+    
   remove(netcdf_alt,
          station_altitude)  
     
@@ -1216,6 +1300,13 @@ NetCDF Output
   remove(nc_ghcn,
          netcdf_time_dim)
 
+  print("--------------------------")
+  print(paste("Station # ",
+              ncdc_index,
+              " of ",
+              total_number_of_stations,
+              sep = ""))
+  print(filename_station_label)
   print(available_datafields)
   
   remove(Date,
