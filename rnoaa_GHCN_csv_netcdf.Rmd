@@ -25,7 +25,6 @@ library("rlist")
 
 ```{r}
 
-working_year = 1980
 
 ncdc_ids = ncdc_stations(locationid = 'CITY:US460006', 
                          datasetid  = 'GHCND',
@@ -94,7 +93,7 @@ Specific Output for CITY:US460006
 
 total_number_of_stations = length(ncdc_ids$name)
 
-ncdc_index = 47  #20
+ncdc_index = 46  #20
   
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -200,6 +199,23 @@ ncdc_index = 47  #20
       wesf_full_field$date[] = wesf_full_field$date[ordered] 
   }
             
+  if ("AWND" %in% available_datafields)  {
+    awnd_full_field          = sorted_data$awnd
+      ordered                = order(awnd_full_field$date)
+      awnd_full_field$awnd[] = awnd_full_field$awnd[ordered] / 10
+      awnd_full_field$date[] = awnd_full_field$date[ordered] 
+  }
+            
+            
+  if ("AWDR" %in% available_datafields)  {
+    awdr_full_field          = sorted_data$awnd
+      ordered                = order(awnd_full_field$date)
+      awdr_full_field$awdr[] = awdr_full_field$awdr[ordered]
+      awdr_full_field$date[] = awdr_full_field$date[ordered] 
+  }
+            
+
+
   remove(sorted_data,
          ordered)
 
@@ -211,112 +227,202 @@ ncdc_index = 47  #20
 
   Days_from_1970_01_01 = as.numeric( as.Date(Date) )
   
-  index_days           = Days_from_1970_01_01      - 
-                         min(Days_from_1970_01_01) + 
-                         1
-  
-  new_variable   = Days_from_1970_01_01
-  new_variable[] = NA
   
   if ("TMAX" %in% available_datafields)  {
-    tmax             = new_variable
-    index_tmax       = as.numeric(tmax_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_tmax       = index_tmax[which(index_tmax <= max(index_days)) ]
-    index_tmax       = index_tmax[which(index_tmax >= min(index_days)) ]
-    tmax[index_tmax] = tmax_full_field$tmax[index_tmax]
-    print(index_tmax)
+
+    ts_in  =   ts(data   = tmax_full_field$tmax,
+                  start  = as.Date(tmax_full_field$date[1]),
+                  end    = as.Date(tmax_full_field$date[length(tmax_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")  
+                )
+ 
+    tmax  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(tmax_full_field,
-           index_tmax)
-    
-    
-    
-    
+           ts_in)
     
   }
     
   if ("TMIN" %in% available_datafields)  {
-    tmin             = new_variable
-    index_tmin       = as.numeric(tmin_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_tmin       = index_tmin[which(index_tmin <= max(index_days)) ]
-    index_tmin       = index_tmin[which(index_tmin >= min(index_days)) ]
-    tmin[index_tmin] = tmin_full_field$tmin[index_tmin]
+
+    ts_in  =   ts(data   = tmin_full_field$tmin,
+                  start  = as.Date(tmin_full_field$date[1]),
+                  end    = as.Date(tmin_full_field$date[length(tmin_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")  
+                )
+ 
+    tmin  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(tmin_full_field,
-           index_tmin)
+           ts_in)
+    
   }
+
     
   if ("TAVG" %in% available_datafields)  {
     
+    ts_in  =   ts(data   = tavg_full_field$tavg,
+                  start  = as.Date(tavg_full_field$date[1]),
+                  end    = as.Date(tavg_full_field$date[length(tavg_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+ 
+    tavg  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
     
-    
-    tavg             = new_variable
-    
-    tavg_date        = tavg_full_field$date[ tavg_full_field$date <= max(Date) ]
-    tavg_date        = tavg_date[ tavg_date >=  min(Date) ] 
-    tavg[which(as.numeric(Date) == as.numeric(tavg_date))] = tavg_full_field$tavg[which(Date == tavg_date)]
-      
-      
-      
-      
-    index_tavg        = as.numeric(tavg_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_tavg       = index_tavg[which(index_tavg <= max(index_days)) ]
-    index_tavg       = index_tavg[which(index_tavg >= min(index_days)) ]
-    tavg[index_tavg] = tavg_full_field$tavg[index_tavg]
-    print(index_tavg)
     remove(tavg_full_field,
-           index_tavg)
+           ts_in)
   }    
   
   
   if ("PRCP" %in% available_datafields)  {
-    prcp             = new_variable
-    index_prcp       = as.numeric(prcp_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_prcp       = index_prcp[which(index_prcp <= max(index_days)) ]
-    index_prcp       = index_prcp[which(index_prcp >= min(index_days)) ]
-    prcp[index_prcp] = prcp_full_field$prcp[index_prcp]
+    
+    ts_in  =   ts(data   = prcp_full_field$prcp,
+                  start  = as.Date(prcp_full_field$date[1]),
+                  end    = as.Date(prcp_full_field$date[length(prcp_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+ 
+    prcp  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(prcp_full_field,
-           index_prcp)
+           ts_in)
   }
        
   if ("SNOW" %in% available_datafields)  {
-    snow             = new_variable
-    index_snow       = as.numeric(snow_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_snow       = index_snow[which(index_snow <= max(index_days)) ]
-    index_snow       = index_snow[which(index_snow >= min(index_days)) ]
-    snow[index_snow] = snow_full_field$snow[index_snow]
+    
+    ts_in  =   ts(data   = snow_full_field$snow,
+                  start  = as.Date(snow_full_field$date[1]),
+                  end    = as.Date(snow_full_field$date[length(snow_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+    
+    snow  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(snow_full_field,
-           index_snow)
+           ts_in)
+    
   }
     
   if ("SNWD" %in% available_datafields)  {
-    snwd             = new_variable
-    index_snwd       = as.numeric(snwd_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_snwd       = index_snwd[which(index_snwd <= max(index_days)) ]
-    index_snwd       = index_snwd[which(index_snwd >= min(index_days)) ]
-    snwd[index_snwd] = snwd_full_field$snwd[index_snwd]
+    
+    ts_in  =   ts(data   = snwd_full_field$snwd,
+                  start  = as.Date(snwd_full_field$date[1]),
+                  end    = as.Date(snwd_full_field$date[length(snwd_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+    
+    snwd  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(snwd_full_field,
-           index_snwd)
+           ts_in)
+    
   }
       
   if ("WESD" %in% available_datafields)  {
-    wesd             = new_variable
-    index_wesd       = as.numeric(wesd_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_wesd       = index_wesd[which(index_wesd <= max(index_days)) ]
-    index_wesd       = index_wesd[which(index_wesd >= min(index_days)) ]
-    wesd[index_wesd] = wesd_full_field$wesd[index_wesd]
+    
+    ts_in  =   ts(data   = wesd_full_field$wesd,
+                  start  = as.Date(wesd_full_field$date[1]),
+                  end    = as.Date(wesd_full_field$date[length(wesd_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+    
+    wesd  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(wesd_full_field,
-           index_wesd)
+           ts_in)
+    
   }
     
   if ("WESF" %in% available_datafields)  {
-    wesf             = new_variable
-    index_wesf       = as.numeric(wesf_full_field$date) - Days_from_1970_01_01[1] + 1
-    index_wesf       = index_wesf[which(index_wesf <= max(index_days)) ]
-    index_wesf       = index_wesf[which(index_wesf >= min(index_days)) ]
-    wesf[index_wesf] = wesf_full_field$wesf[index_wesf]
+    
+    ts_in  =   ts(data   = wesf_full_field$wesf,
+                  start  = as.Date(wesf_full_field$date[1]),
+                  end    = as.Date(wesf_full_field$date[length(wesf_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+    
+    wesd  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
     remove(wesf_full_field,
-           index_wesf)
+           ts_in)
+    
   }
         
+    
+  if ("AWND" %in% available_datafields)  {
+    
+    ts_in  =   ts(data   = awnd_full_field$awnd,
+                  start  = as.Date(awnd_full_field$date[1]),
+                  end    = as.Date(awnd_full_field$date[length(awnd_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+    
+    awnd  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
+    remove(awnd_full_field,
+           ts_in)
+    
+  }
+        
+   
+  if ("AWDR" %in% available_datafields)  {
+    
+    ts_in  =   ts(data   = awdr_full_field$awdr,
+                  start  = as.Date(awdr_full_field$date[1]),
+                  end    = as.Date(awdr_full_field$date[length(awdr_full_field$date)]),
+                  deltat = 1, 
+                  ts.eps = getOption("ts.eps")    )
+    
+    awnd  = window(x      = ts_in, 
+                   start  = as.numeric(as.Date(ncdc_start_yymmdd)),
+                   end    = as.numeric(as.Date(ncdc_end_yymmdd)),
+                   deltat = 1,
+                   extend = TRUE)
+    
+    remove(awdr_full_field,
+           ts_in)
+    
+  }
+
+
   remove(new_variable,
          index_days)
 
@@ -351,7 +457,7 @@ Plot Min Temperatures
          y       = tmin, 
          type    = "p", 
          pch     = ".",   # as points
-         col     = "darkgreen", 
+         col     = "darkgoldenrod1", 
          lwd     = 1.5, 
          cex.lab = 1.25,
          xlab    = "Date", 
@@ -361,6 +467,24 @@ Plot Min Temperatures
 
 ```
 
+Plot Mean Temperatures
+
+```{r}
+
+  if ("TAVG" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = tavg, 
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "orange", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Mean Temperature (deg C)",
+         main    = station_name_label)
+  }
+
+```
 Plot Precip
 
 ```{r}
@@ -418,6 +542,82 @@ Plot Snow Depth
 
 ```
 
+Wind Speed
+
+```{r}
+
+  if ("WESD" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = wesd,
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "blue", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Snow Water Equivalent Depth (mm)",
+         main    = station_name_label)
+  }
+
+```
+
+
+Wind Direction
+
+```{r}
+
+  if ("AWDR" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = awdr,
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "blue", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Wind Direction (degrees from)",
+         main    = station_name_label)
+  }
+
+```
+
+Plot Snow Water Equiv (Depth)
+
+```{r}
+
+  if ("WESF" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = wesf,
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "deepskyblue4", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Snowfall Water Equivalent (mm)",
+         main    = station_name_label)
+  }
+
+```
+
+
+```{r}
+
+  if ("AWND" %in% available_datafields)  {
+    plot(x       = Date,
+         y       = awnd,
+         type    = "p", 
+         pch     = ".",   # as points
+         col     = "deeppink2", 
+         lwd     = 1.5, 
+         cex.lab = 1.25,
+         xlab    = "Date", 
+         ylab    = "Average Wind Speed (m s-1)",
+         main    = station_name_label)
+  }
+
+```
+
 Convert to a CSV File.
 
 ```{r}
@@ -449,7 +649,12 @@ Convert to a CSV File.
   if ("WESF" %in% available_datafields)
     targ_time_series_raw$snowfall_water_equiv  = wesf
 
-  
+  if ("AWND" %in% available_datafields)
+    targ_time_series_raw$wind_speed            = awnd
+
+  if ("AWDR" %in% available_datafields)
+    targ_time_series_raw$wind_from_direction   = awdr
+
     
   output_file_name = paste(file_title_string,
                            ".csv",
@@ -599,7 +804,31 @@ NetCDF Output
                                              netcdf_wesf)  
   }
   
+   
+  if ("AWND" %in% available_datafields) {
+    netcdf_awnd = ncvar_def(nam      = "average_wind_speed",
+                            units    = "m s-1",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Mean Daily Wind Speed",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_awnd)  
+  }
+
+     
+  if ("AWNDR" %in% available_datafields) {
+    netcdf_awdr = ncvar_def(nam      = "average_wind_from_direction",
+                            units    = "degrees_from",
+                            dim      = netcdf_time_dim,
+                            missval  = fill_value,
+                            longname = "Mean Daily Wind Origin Direction",
+                            prec     = "single")
+    netcdf_available_variables = list.append(netcdf_available_variables,
+                                             netcdf_awdr)  
+  }
   
+
 ```
 
 
@@ -822,6 +1051,45 @@ NetCDF Output
               definemode = FALSE )
   }
 
+          
+  if ("AWND" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_awnd, 
+              attname    = "standard_name", 
+              attval     = "average_wind_speed", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_awnd, 
+              attname    = "description", 
+              attval     = "Mean Daily Wind Speed", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+
+
+          
+  if ("AWDR" %in% available_datafields) {
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_awdr, 
+              attname    = "standard_name", 
+              attval     = "average_wind_from_direction", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+    
+    ncatt_put(nc         = nc_ghcn, 
+              varid      = netcdf_awdr, 
+              attname    = "description", 
+              attval     = "Mean Daily Wind Origin Direction", 
+              prec       = NA, 
+              verbose    = FALSE, 
+              definemode = FALSE )
+  }
+
 ```
 
 
@@ -923,17 +1191,48 @@ NetCDF Output
            wesf)
   }  
     
+
+  if ("AWND" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_awnd, 
+              vals    = awnd, 
+              verbose = FALSE ) 
+    remove(netcdf_awnd,
+           awnd)
+  }  
+    
+
+  if ("AWDR" %in% available_datafields) {
+    ncvar_put(nc      = nc_ghcn, 
+              varid   = netcdf_awdr, 
+              vals    = awnd, 
+              verbose = FALSE ) 
+    remove(netcdf_awdr,
+           awdr)
+  }  
     
   nc_close( nc_ghcn )
   
   remove(nc_ghcn,
          netcdf_time_dim)
 
+  print(available_datafields)
+  
   remove(Date,
-         Days_from_1970_01_01)
+         Days_from_1970_01_01,
+         available_datafields,
+         file_title_string,
+         filename_ghcn_label,
+         filename_station_label,
+         fill_value,
+         ghcn_station_code,
+         ncdc_end_yymmdd,
+         ncdc_start_yymmdd,
+         netcdf_available_variables,
+         output_file_name,
+         ncdc_id_code,
+         netcdf_output_file_name,
+         station_name_label)
   
-
-  
-
 ```
 
