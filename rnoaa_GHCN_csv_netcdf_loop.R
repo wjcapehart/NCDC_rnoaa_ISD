@@ -1,15 +1,6 @@
 
----
-title: "RNOAA R Script for extracting GHCN Datasets for output to CSV and netCDF"
-output:
-  pdf_document: default
-  html_notebook: default
-  html_document:
-    df_print: paged
----
 
 
-```{r}
 
 library("rnoaa")
 library("isdparser")
@@ -19,14 +10,14 @@ library("dplyr")
 library("openair")
 library("rlist")
 
-```
 
 
 
-```{r}
 
 
-ncdc_ids = ncdc_stations(locationid = 'CITY:US460006', 
+
+
+ncdc_ids = ncdc_stations(locationid = 'FIPS:46', 
                          datasetid  = 'GHCND',
                          limit      = 1000)
 
@@ -34,66 +25,14 @@ n_stations = ncdc_ids$meta$pageCount
 
 ncdc_ids = ncdc_ids$data
 
-ncdc_ids
+print(ncdc_ids)
 
-```
 
-Specific Output for CITY:US460006
 
-   elevation    mindate    maxdate latitude                                      name datacoverage                id elevationUnit longitude
-1      883.9 2007-06-01 2018-01-23 44.23180                  BOX ELDER 8.0 NNE, SD US       0.9555 GHCND:US1SDMD0001        METERS -103.0345
-2     1113.1 2007-07-19 2009-09-28 44.17800                  BLACKHAWK 2.0 NNW, SD US       0.5766 GHCND:US1SDMD0004        METERS -103.3326
-3     1119.8 2007-08-03 2008-01-07 44.18250                  BLACKHAWK 2.3 NNW, SD US       0.9620 GHCND:US1SDMD0018        METERS -103.3347
-4     1077.2 2007-08-04 2017-11-18 44.15200                  BLACKHAWK 0.1 WNW, SD US       0.6654 GHCND:US1SDMD0019        METERS -103.3165
-5     1090.0 2011-01-19 2017-11-30 44.24050                    PIEDMONT 1.0 NW, SD US       0.1201 GHCND:US1SDMD0025        METERS -103.4041
-6      981.2 2014-03-21 2018-01-24 44.23070                     PIEDMONT 4.6 E, SD US       0.8912 GHCND:US1SDMD0032        METERS -103.2966
-7      985.7 2016-09-25 2018-01-24 44.16110                 RAPID CITY 6.2 NNE, SD US       0.9302 GHCND:US1SDMD0036        METERS -103.1974
-8      954.9 2007-05-20 2013-05-30 44.08500                  RAPID CITY 1.7 NW, SD US       0.9265 GHCND:US1SDPN0001        METERS -103.2339
-9     1058.9 2007-06-04 2018-01-24 44.08860                 RAPID CITY 3.4 WNW, SD US       1.0000 GHCND:US1SDPN0002        METERS -103.2997
-10    1186.0 2007-06-01 2018-01-21 44.01350                  RAPID CITY 5.4 SW, SD US       0.9198 GHCND:US1SDPN0004        METERS -103.3008
-11     943.1 2007-07-13 2007-12-06 44.04720                 RAPID CITY 4.3 ESE, SD US       0.9320 GHCND:US1SDPN0005        METERS -103.1555
-12     965.9 2007-07-17 2008-06-25 44.06610                   RAPID CITY 4.5 E, SD US       0.4464 GHCND:US1SDPN0006        METERS -103.1436
-13    1046.1 2007-07-17 2010-07-30 43.89800                    HERMOSA 4.4 NNE, SD US       0.5180 GHCND:US1SDPN0015        METERS -103.1560
-14     978.1 2010-06-11 2015-08-27 44.00690                  RAPID CITY 6.1 SW, SD US       0.1224 GHCND:US1SDPN0016        METERS -103.3094
-15    1065.0 2007-07-18 2010-10-29 44.08600                 RAPID CITY 3.5 WNW, SD US       0.1533 GHCND:US1SDPN0017        METERS -103.3015
-16    1357.6 2007-07-30 2011-07-04 43.96600                  RAPID CITY 9.8 SW, SD US       0.9025 GHCND:US1SDPN0018        METERS -103.3603
-17     891.8 2007-09-03 2017-07-12 44.10000                  BOX ELDER 6.2 ESE, SD US       0.6004 GHCND:US1SDPN0022        METERS -102.9500
-18    1022.9 2008-01-03 2017-08-15 44.08490                 RAPID CITY 2.4 WNW, SD US       0.5073 GHCND:US1SDPN0027        METERS -103.2804
-19    1248.5 2008-04-10 2017-10-16 44.10090                 RAPID CITY 6.4 WNW, SD US       0.3054 GHCND:US1SDPN0029        METERS -103.3574
-20    1085.7 2008-04-19 2017-04-03 44.03390                 RAPID CITY 3.3 SSW, SD US       0.8799 GHCND:US1SDPN0030        METERS -103.2675
-21    1208.8 2008-06-19 2010-10-28 44.00570                  RAPID CITY 5.8 SW, SD US       0.7332 GHCND:US1SDPN0031        METERS -103.2975
-22    1225.0 2008-11-01 2015-10-04 44.00280                  RAPID CITY 6.3 SW, SD US       0.3527 GHCND:US1SDPN0032        METERS -103.3105
-23    1016.2 2010-06-17 2011-05-20 44.06440                 RAPID CITY 2.5 WSW, SD US       0.5030 GHCND:US1SDPN0033        METERS -103.2805
-24    1284.7 2010-11-17 2012-08-03 44.12940                 RAPID CITY 8.1 WNW, SD US       0.2013 GHCND:US1SDPN0034        METERS -103.3783
-25     993.3 2011-06-16 2012-04-14 44.04140                  RAPID CITY 2.9 SE, SD US       0.3783 GHCND:US1SDPN0036        METERS -103.1994
-26     960.7 2012-01-20 2018-01-24 44.09580                  RAPID CITY 3.5 NE, SD US       0.8029 GHCND:US1SDPN0038        METERS -103.2121
-27    1278.9 2012-04-01 2018-01-24 44.08660                   RAPID CITY 6.9 W, SD US       0.9492 GHCND:US1SDPN0040        METERS -103.3701
-28    1133.2 2012-04-18 2017-10-28 44.01830                   RAPID CITY 3.9 S, SD US       0.4104 GHCND:US1SDPN0043        METERS -103.2395
-29    1010.1 2012-05-03 2018-01-24 44.04870                 RAPID CITY 2.0 SSE, SD US       0.9704 GHCND:US1SDPN0044        METERS -103.2173
-30     999.7 2012-04-24 2013-10-04 44.00610                  RAPID CITY 6.3 SE, SD US       0.5633 GHCND:US1SDPN0047        METERS -103.1506
-31    1149.4 2014-04-27 2016-10-30 44.02080                   RAPID CITY 3.8 S, SD US       0.1198 GHCND:US1SDPN0049        METERS -103.2418
-32     991.8 2014-04-01 2018-01-24 44.13870                   BOX ELDER 1.6 NE, SD US       0.8681 GHCND:US1SDPN0050        METERS -103.0532
-33    1055.5 2014-04-27 2014-10-13 44.05190                  RAPID CITY 2.6 SW, SD US       0.9294 GHCND:US1SDPN0053        METERS -103.2739
-34    1298.4 2014-04-21 2018-01-24 44.12740                 RAPID CITY 9.6 WNW, SD US       0.8618 GHCND:US1SDPN0056        METERS -103.4116
-35     962.9 2014-05-21 2018-01-21 44.06240                   RAPID CITY 4.7 E, SD US       0.3085 GHCND:US1SDPN0057        METERS -103.1398
-36     983.0 2014-08-22 2015-11-18 44.07220                   RAPID CITY 4.6 E, SD US       0.9075 GHCND:US1SDPN0058        METERS -103.1402
-37    1304.5 2017-03-29 2018-01-23 44.06310                   RAPID CITY 8.4 W, SD US       1.0000 GHCND:US1SDPN0063        METERS -103.4012
-38    1280.2 1898-01-01 1899-03-31 43.89249                             HARNEY, SD US       1.0000 GHCND:USC00393573        METERS -103.3880
-39    1275.3 1994-10-01 2011-10-31 44.08389                     JOHNSON SIDING, SD US       0.9608 GHCND:USC00394343        METERS -103.4342
-40    1352.1 1990-09-01 1997-09-30 43.90389                           KEYSTONE, SD US       0.9996 GHCND:USC00394556        METERS -103.4100
-41    1438.7 1951-08-01 2018-01-24 44.06220                        PACTOLA DAM, SD US       0.9397 GHCND:USC00396427        METERS -103.4819
-42     987.6 1916-05-01 1922-05-31 44.06666        RAPID CITY STATION NUMBER 1, SD US       0.5918 GHCND:USC00396936        METERS -103.2000
-43    1051.6 1949-06-01 2018-01-24 44.11500                    RAPID CITY 4 NW, SD US       0.9572 GHCND:USC00396947        METERS -103.2827
-44    1029.9 1996-01-01 2018-01-23 44.07270 RAPID CITY WEATHER FORECAST OFFICE, SD US       0.9996 GHCND:USC00396948        METERS -103.2108
-45    1424.6 2001-10-18 2018-01-24 43.97920            BAKER PARK SOUTH DAKOTA, SD US       0.9992 GHCND:USR0000SBAK        METERS -103.4250
-46     999.1 1949-01-01 1970-12-31 44.15000                      ELLSWORTH AFB, SD US       0.9961 GHCND:USW00024006        METERS -103.1000
-47     963.2 1948-05-01 2018-01-24 44.04330        RAPID CITY REGIONAL AIRPORT, SD US       0.9998 GHCND:USW00024090        METERS -103.0536
-
-```{r}
 
 total_number_of_stations = length(ncdc_ids$name)
 
-ncdc_index = 47  #20
+for (ncdc_index in 930:total_number_of_stations) {
   
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -134,10 +73,10 @@ ncdc_index = 47  #20
   remove(ncdc_data)
   
 
-```
 
 
-```{r}
+
+
 
   if ("TMAX" %in% available_datafields)  {
     tmax_full_field          = sorted_data$tmax
@@ -158,8 +97,6 @@ ncdc_index = 47  #20
       ordered                = order(tavg_full_field$date)
       tavg_full_field$tavg[] = tavg_full_field$tavg[ordered] / 10
       tavg_full_field$date[] = tavg_full_field$date[ordered] 
-      
-      print(tavg_full_field)
   }
       
   if ("PRCP" %in% available_datafields)  {
@@ -219,11 +156,11 @@ ncdc_index = 47  #20
   remove(sorted_data,
          ordered)
 
-```
 
 
 
-```{r}
+
+
 
   Days_from_1970_01_01 = as.numeric( as.Date(Date) )
   
@@ -371,7 +308,7 @@ ncdc_index = 47  #20
                   deltat = 1, 
                   ts.eps = getOption("ts.eps")    )
     
-    wesd  = window(x      = ts_in, 
+    wesf  = window(x      = ts_in, 
                    start  = as.numeric(as.Date(ncdc_start_yymmdd)),
                    end    = as.numeric(as.Date(ncdc_end_yymmdd)),
                    deltat = 1,
@@ -423,14 +360,11 @@ ncdc_index = 47  #20
   }
 
 
-  remove(new_variable,
-         index_days)
 
-```
 
-Plot Max Temperature
 
-```{r}
+
+
 
   if ("TMAX" %in% available_datafields)  {
     plot(x       = Date,
@@ -446,11 +380,10 @@ Plot Max Temperature
   }
 
 
-```
 
-Plot Min Temperatures
 
-```{r}
+
+
 
   if ("TMIN" %in% available_datafields)  {
     plot(x       = Date,
@@ -465,11 +398,10 @@ Plot Min Temperatures
          main    = station_name_label)
   }
 
-```
 
-Plot Mean Temperatures
 
-```{r}
+
+
 
   if ("TAVG" %in% available_datafields)  {
     plot(x       = Date,
@@ -484,10 +416,9 @@ Plot Mean Temperatures
          main    = station_name_label)
   }
 
-```
-Plot Precip
 
-```{r}
+
+
 
   if ("PRCP" %in% available_datafields)  {
     plot(x       = Date,
@@ -502,11 +433,10 @@ Plot Precip
          main    = station_name_label)
   }
 
-```
 
-Plot Snow
 
-```{r}
+
+
 
   if ("SNOW" %in% available_datafields)  {
     plot(x       = Date,
@@ -521,11 +451,10 @@ Plot Snow
          main    = station_name_label)
   }
 
-```
 
-Plot Snow Depth
 
-```{r}
+
+
 
   if ("SNWD" %in% available_datafields)  {
     plot(x       = Date,
@@ -540,11 +469,10 @@ Plot Snow Depth
          main    = station_name_label)
   }
 
-```
 
-Wind Speed
 
-```{r}
+
+
 
   if ("WESD" %in% available_datafields)  {
     plot(x       = Date,
@@ -559,12 +487,11 @@ Wind Speed
          main    = station_name_label)
   }
 
-```
 
 
-Wind Direction
 
-```{r}
+
+
 
   if ("AWDR" %in% available_datafields)  {
     plot(x       = Date,
@@ -579,11 +506,10 @@ Wind Direction
          main    = station_name_label)
   }
 
-```
 
-Plot Snow Water Equiv (Depth)
 
-```{r}
+
+
 
   if ("WESF" %in% available_datafields)  {
     plot(x       = Date,
@@ -598,10 +524,10 @@ Plot Snow Water Equiv (Depth)
          main    = station_name_label)
   }
 
-```
 
 
-```{r}
+
+
 
   if ("AWND" %in% available_datafields)  {
     plot(x       = Date,
@@ -616,63 +542,60 @@ Plot Snow Water Equiv (Depth)
          main    = station_name_label)
   }
 
-```
 
-Convert to a CSV File.
 
-```{r}
+
+
 
 
   targ_time_series_raw = data.frame(date = Date)
   
   if ("TMAX" %in% available_datafields) 
-    targ_time_series_raw$max_temperature       = tmax
+    targ_time_series_raw$Max_Temperature       = tmax
 
   if ("TMIN" %in% available_datafields) 
-    targ_time_series_raw$min_temperature       = tmin
+    targ_time_series_raw$Min_Temperature       = tmin
 
   if ("TAVG" %in% available_datafields) 
-    targ_time_series_raw$mean_temperature      = tavg
+    targ_time_series_raw$Mean_Temperature      = tavg
 
   if ("PRCP" %in% available_datafields) 
-    targ_time_series_raw$precipitation         = prcp
+    targ_time_series_raw$Precipitation         = prcp
 
   if ("SNOW" %in% available_datafields)
-    targ_time_series_raw$snowfall              = snow
+    targ_time_series_raw$SnowFall              = snow
 
   if ("SNWD" %in% available_datafields)
-    targ_time_series_raw$snowdepth             = snwd
+    targ_time_series_raw$SnowDepth             = snwd
 
   if ("WESD" %in% available_datafields)
-    targ_time_series_raw$snowdepth_water_equiv = wesd
+    targ_time_series_raw$Snowdepth_Water_Equiv = wesd
 
   if ("WESF" %in% available_datafields)
-    targ_time_series_raw$snowfall_water_equiv  = wesf
+    targ_time_series_raw$Snowfall_Water_Equiv  = wesf
 
   if ("AWND" %in% available_datafields)
-    targ_time_series_raw$wind_speed            = awnd
+    targ_time_series_raw$Mean_Wind_Speed            = awnd
 
   if ("AWDR" %in% available_datafields)
-    targ_time_series_raw$wind_from_direction   = awdr
+    targ_time_series_raw$Mean_Wind_From_Direction   = awdr
 
     
   output_file_name = paste(file_title_string,
                            ".csv",
                            sep="")
     
-  write.table(x    = targ_time_series_raw, 
-              file = output_file_name, 
-              sep  =", ",
-              row.names = FALSE)
+  write.csv(x    = targ_time_series_raw, 
+            file = output_file_name, 
+            row.names = FALSE)
 
   
   remove(targ_time_series_raw)
 
-```
- 
-NetCDF Output
 
-```{r}
+ 
+
+
 
 
   netcdf_output_file_name = paste(file_title_string,
@@ -690,9 +613,9 @@ NetCDF Output
                                val   = 1:nchar(file_title_string),
                                unlim = FALSE,
                                create_dimvar=FALSE)
-```
 
-```{r}
+
+
 
   fill_value = 9.96921e+36
 
@@ -848,10 +771,10 @@ NetCDF Output
   }
   
 
-```
 
 
-```{r}
+
+
 
   
   nc_ghcn = nc_create(filename = netcdf_output_file_name, 
@@ -859,10 +782,10 @@ NetCDF Output
                         force_v4 = FALSE, 
                         verbose  = FALSE )
 
-```
 
 
-```{r}
+
+
 
 ncatt_put(nc         = nc_ghcn, 
           varid      = 0, 
@@ -940,10 +863,10 @@ ncatt_put(nc         = nc_ghcn,
 #           definemode = FALSE)
 
 
-```
 
 
-```{r}
+
+
 
   ncatt_put(nc         = nc_ghcn, 
             varid      = netcdf_alt, 
@@ -1263,10 +1186,10 @@ ncatt_put(nc         = nc_ghcn,
               definemode = FALSE )
   }
 
-```
 
 
-```{r}
+
+
   
   ncvar_put(nc      = nc_ghcn, 
             varid   = netcdf_lat, 
@@ -1404,6 +1327,9 @@ ncatt_put(nc         = nc_ghcn,
   print(filename_station_label)
   print(available_datafields)
   
+  
+  
+  
   remove(Date,
          Days_from_1970_01_01,
          available_datafields,
@@ -1420,5 +1346,7 @@ ncatt_put(nc         = nc_ghcn,
          netcdf_output_file_name,
          station_name_label)
   
-```
+  }
+  
+
 
