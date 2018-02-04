@@ -15,9 +15,9 @@ library("rlist")
 
 
 
+# my common loc ids : SD->FIPS:46  NAMIBIA->FIPS:WA CHEYENNE->HUC:101202 & HUC:101201 
 
-
-ncdc_ids = ncdc_stations(locationid = 'FIPS:46', 
+ncdc_ids = ncdc_stations(locationid = 'HUC:101201', 
                          datasetid  = 'GHCND',
                          limit      = 1000)
 
@@ -32,7 +32,7 @@ print(ncdc_ids)
 
 total_number_of_stations = length(ncdc_ids$name)
 
-for (ncdc_index in 930:total_number_of_stations) {
+for (ncdc_index in 1:total_number_of_stations) {
   
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -585,10 +585,10 @@ for (ncdc_index in 930:total_number_of_stations) {
                            ".csv",
                            sep="")
     
-  write.csv(x    = targ_time_series_raw, 
-            file = output_file_name, 
-            row.names = FALSE)
-
+#  write.csv(x    = targ_time_series_raw, 
+#            file = output_file_name, 
+#            row.names = FALSE)
+#
   
   remove(targ_time_series_raw)
 

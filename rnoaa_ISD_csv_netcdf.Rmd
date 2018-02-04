@@ -716,7 +716,7 @@ We can only assign at few attribute on file creation.  We now add some of the ot
 ncatt_put(nc         = nc_hourly, 
           varid      = 0, 
           attname    = "Title", 
-          attval     = paste("NCEI Data Hourly Output for ",
+          attval     = paste("NCEI ISD/DS3505 Data Hourly Output for ",
                              name_of_station,
                              sep=""), 
           prec       = NA, 
@@ -763,6 +763,14 @@ ncatt_put(nc         = nc_hourly,
           verbose    = FALSE, 
           definemode = FALSE )
 
+ncatt_put(nc         = nc_hourly, 
+          varid      = 0, 
+          attname    = "featureType", 
+          attval     = timeSeries, 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+
 ```
 
 We should also add the standard names and suplementary descriptions for our variables.
@@ -785,6 +793,14 @@ ncatt_put(nc         = nc_hourly,
           verbose    = FALSE, 
           definemode = FALSE )
 
+ncatt_put(nc         = nc_hourly, 
+          varid      = netcdf_prcp, 
+          attname    = "cell_methods", 
+          attval     = "time: sum", 
+          prec       = NA, 
+          verbose    = FALSE, 
+          definemode = FALSE )
+  
 ncatt_put(nc         = nc_hourly, 
           varid      = netcdf_prec, 
           attname    = "comment", 
