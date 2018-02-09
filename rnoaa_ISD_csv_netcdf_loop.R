@@ -1,4 +1,7 @@
-setwd ("H:/Climate R Directory")
+storage_directory = "H:/Climate R Directory"
+storage_directory = ""
+
+# setwd (storage_directory)
 library("rnoaa")
 library("isdparser")
 library("lubridate")
@@ -8,15 +11,19 @@ library("openair")
 
 stations_near_targ = isd_stations_search(lat    =   44.0444325,  # degrees_north
                                          lon    = -103.0565652,  # degrees_east
-                                         radius =   10.)  # km
+                                         radius =   3.)  # km
 
 
-for (target_year in c(1973:2016)){    # add manually                      
+print(stations_near_targ)
+
+station_list_number = 2 # indicing starts at 1   # add manually
+station_list_number_label = 1 # indicing starts at 1   # add manually
+
+for (target_year in c(1950:1950)){    # add manually                      
   
   file_title_string = "KRAP"
   name_of_station   = "Rapid City Regional Airport"
   
-  station_list_number = 1 # indicing starts at 1   # add manually
   
   
   target_usaf = stations_near_targ$usaf[station_list_number]  
@@ -26,13 +33,34 @@ for (target_year in c(1973:2016)){    # add manually
   station_lat = stations_near_targ$latitude[station_list_number]
   station_alt = stations_near_targ$elev_m[station_list_number]
   
+  station_archive_name = stations_near_targ$station_name[station_list_number]
+  
+  station_icao_name = stations_near_targ$icao[station_list_number]
+  
   station_name_label = paste(name_of_station, 
                              target_year)
   
-  output_file_name = paste(file_title_string,
-                           target_year,
-                           ".csv",
+  station_id_name = paste(stations_near_targ$usaf[station_list_number_label],
+                          "-",
+                          stations_near_targ$wban[station_list_number_label],
+                          "__",
+                          stations_near_targ$icao[station_list_number_label],
+                          "__",
+                          stations_near_targ$station_name[station_list_number_label],
+                          "_",
+                          stations_near_targ$state[station_list_number_label],
+                          "_",
+                          stations_near_targ$ctry[station_list_number_label],
+                          sep="")
+  
+  station_id_name = gsub(" ", "_", station_id_name)
+  
+  
+  output_file_name_prefix = paste("ISD_",
+                           station_id_name,
+                           "___",
                            sep="")
+  
   targ_data = isd(usaf     = target_usaf,  # your usaf number
                   wban     = target_wban,  # your wban number
                   year     = target_year,  # your year
@@ -238,8 +266,8 @@ for (target_year in c(1973:2016)){    # add manually
                                               method = "constant",
                                               xout   = hour_time)$y
   
-  output_file_name = paste("H:/Climate R Directory/Hourly_Data/", 
-                           file_title_string,
+  output_file_name = paste(storage_directory, 
+                           output_file_name_prefix,
                            "_HOURLY_",
                            target_year,
                            ".csv",
@@ -265,8 +293,8 @@ for (target_year in c(1973:2016)){    # add manually
   targ_time_series_raw$ISD_precip_01hr = targ_data$precip_01hr
   
   
-  output_file_name = paste("H:/Climate R Directory/Raw_Data/", 
-                           file_title_string,
+  output_file_name = paste(storage_directory, 
+                           output_file_name_prefix,
                            "_RAW_",
                            target_year,
                            ".csv",
@@ -284,27 +312,30 @@ for (target_year in c(1973:2016)){    # add manually
                                calendar="standard")
   fill_value = 9.96921e+36
   
+  #--------------------------------------------------------
+  
   netcdf_lat      = ncvar_def(nam      = "latitude",
                               units    = "degrees_north",
                               dim      = list(),
-                              missval  = fill_value,
                               longname = "Latitude",
                               prec     ="single")
   
   netcdf_lon      = ncvar_def(nam      = "longitude",
                               units    = "degrees_east",
                               dim      = list(),
-                              missval  = fill_value,
                               longname = "Longitue",
                               prec     ="single")
-  
+
   netcdf_alt      = ncvar_def(nam      = "altitude",
                               units    = "m",
                               dim      = list(),
-                              missval  = fill_value,
                               longname = "Elevation",
                               prec     ="single")
+
   
+  #--------------------------------------------------------
+  
+    
   netcdf_temp      = ncvar_def(nam      = "air_temperature",
                                units    = "deg_C",
                                dim      = netcdf_time_dim,
@@ -354,9 +385,10 @@ for (target_year in c(1973:2016)){    # add manually
                                longname = "Hourly Precipitation",
                                prec     ="single")
   
-  netcdf_output_file_name = paste("H:/Climate R Directory/NC_Files/", 
-                                  file_title_string,
-                                  "_HOURLY_",
+  #--------------------------------------------------------
+  
+  netcdf_output_file_name = paste(output_file_name_prefix,
+                                  "___",
                                   target_year,
                                   ".nc",
                                   sep="")
@@ -374,7 +406,9 @@ for (target_year in c(1973:2016)){    # add manually
                                         netcdf_prec), 
                         force_v4 = FALSE, 
                         verbose  = FALSE )
-  
+
+##############################################  
+    
   ncatt_put(nc         = nc_hourly, 
             varid      = 0, 
             attname    = "Title", 
@@ -409,7 +443,7 @@ for (target_year in c(1973:2016)){    # add manually
             verbose    = FALSE, 
             definemode = FALSE )
         
-  ncatt_put(nc         = nc_ghcn,
+  ncatt_put(nc         = nc_hourly,
             varid      = 0,
             attname    = "featureType",
             attval     = "timeSeries",
@@ -422,9 +456,10 @@ for (target_year in c(1973:2016)){    # add manually
             
             
             
-            
-            
-            
+#########################################           
+#########################################           
+  #########################################           
+  
             
   
   ncatt_put(nc         = nc_hourly, 
@@ -442,6 +477,13 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+
+
+  
+  ##############################################  
+  ##############################################  
+  ##############################################  
+  
   
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_prec, 
@@ -466,7 +508,15 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
-  
+
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_prec,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )  
+    
   ncatt_put(nc         = nc_hourly,
             varid      = netcdf_prec,
             attname    = "comment",
@@ -475,6 +525,10 @@ for (target_year in c(1973:2016)){    # add manually
             verbose    = FALSE,
             definemode = FALSE )
 
+  
+  ##############################################  
+  
+  
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_winddir, 
             attname    = "standard_name", 
@@ -490,6 +544,16 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+  
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_winddir,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )   
+  
+  ##############################################  
   
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_windspeed, 
@@ -507,6 +571,17 @@ for (target_year in c(1973:2016)){    # add manually
             verbose    = FALSE, 
             definemode = FALSE )
   
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_windspeed,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )   
+  
+  ##############################################  
+  
+  
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_cloud, 
             attname    = "standard_name", 
@@ -522,7 +597,18 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_cloud,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )   
   
+  ##############################################  
+  
+    
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_mslp, 
             attname    = "standard_name", 
@@ -538,6 +624,17 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_mslp,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )  
+    
+  ##############################################  
+  
   
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_dewpoint, 
@@ -554,7 +651,20 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_dewpoint,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )  
   
+  
+  ##############################################  
+  
+  
+    
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_temp, 
             attname    = "standard_name", 
@@ -571,6 +681,19 @@ for (target_year in c(1973:2016)){    # add manually
             verbose    = FALSE, 
             definemode = FALSE )
   
+  ncatt_put(nc         = nc_hourly,
+            varid      = netcdf_temp,
+            attname    = "coordinates",
+            attval     = "time latitude longitude altitude station_name",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )  
+  
+  ##############################################  
+  ##############################################  
+  ##############################################  
+  
+  
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_alt, 
             attname    = "standard_name", 
@@ -586,6 +709,10 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+
+ 
+   
+   ##############################################  
   
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_lon, 
@@ -602,6 +729,9 @@ for (target_year in c(1973:2016)){    # add manually
             prec       = NA, 
             verbose    = FALSE, 
             definemode = FALSE )
+  
+  
+  ##############################################  
   
   ncatt_put(nc         = nc_hourly, 
             varid      = netcdf_lat, 
@@ -623,6 +753,14 @@ for (target_year in c(1973:2016)){    # add manually
             varid   = netcdf_lat, 
             vals    = station_lat, 
             verbose = FALSE ) 
+  
+  
+  ##############################################  
+  ##############################################  
+  ##############################################  
+  ##############################################  
+  ##############################################  
+  ##############################################  
   
   ncvar_put(nc      = nc_hourly, 
             varid   = netcdf_lon, 
