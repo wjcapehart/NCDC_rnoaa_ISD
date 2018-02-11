@@ -842,14 +842,6 @@ ncatt_put(nc         = nc_ghcn,
           definemode = FALSE)
 
 ncatt_put(nc         = nc_ghcn,
-          varid      = 0,
-          attname    = "featureType",
-          attval     = "timeSeries",
-          prec       = NA,
-          verbose    = FALSE,
-          definemode = FALSE)
-
-ncatt_put(nc         = nc_ghcn,
            varid      = 0,
            attname    = "Conventions",
            attval     = "CF-1.6",
