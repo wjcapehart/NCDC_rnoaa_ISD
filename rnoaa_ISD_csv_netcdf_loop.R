@@ -9,20 +9,77 @@ library("ncdf4")
 library("dplyr")
 library("openair")
 
-stations_near_targ = isd_stations_search(lat    =   44.0444325,  # degrees_north
-                                         lon    = -103.0565652,  # degrees_east
-                                         radius =   3.)  # km
+stations_near_targ = isd_stations_search(lat    =  -20.4545,  # degrees_north
+                                         lon    = 16.6645,  # degrees_east
+                                         radius =   300.)  # km
 
+stations_near_targ = isd_stations_search(lat    = 44,  # degrees_north
+                                         lon    = -103,  # degrees_east
+                                         radius =   300.)  # km
 
 print(stations_near_targ)
 
 station_list_number = 2 # indicing starts at 1   # add manually
 station_list_number_label = 1 # indicing starts at 1   # add manually
 
-for (target_year in c(1950:1950)){    # add manually                      
+
+
+YYYYstart = substr(x     = toString(stations_near_targ$begin[station_list_number]), 
+                   start = 1, 
+                   stop  = 4)
+
+MMstart   = substr(x     = toString(stations_near_targ$begin[station_list_number]), 
+                   start = 5, 
+                   stop  = 6)
+
+DDstart   = substr(x     = toString(stations_near_targ$begin[station_list_number]), 
+                   start = 7, 
+                   stop  = 8)
+
+
+YYYYend   = substr(x     = toString(stations_near_targ$end[station_list_number]), 
+                   start = 1, 
+                   stop  = 4)
+
+MMend     = substr(x     = toString(stations_near_targ$end[station_list_number]), 
+                   start = 5, 
+                   stop  = 6)
+
+DDend     = substr(x     = toString(stations_near_targ$end[station_list_number]), 
+                   start = 7, 
+                   stop  = 8)
+
+
+
+
+
+
+start_date_for_full_record = as.POSIXct(paste(YYYYstart,
+                                              "-",
+                                              MMstart,
+                                              "-",
+                                              DDstart,
+                                              " 00:00:00 UTC",
+                                              sep=""),
+                                        tz = "UTC")
+
+end_date_for_full_record   = as.POSIXct(paste(YYYYend,
+                                              "-",
+                                              MMend,
+                                              "-",
+                                              DDend,
+                                              " 23:00:00 UTC",
+                                              sep=""),
+                                        tz = "UTC")
+
+
+
+
+for (target_year in year(start_date_for_full_record):year(end_date_for_full_record))   {                        
+  
   
   file_title_string = "KRAP"
-  name_of_station   = "Rapid City Regional Airport"
+  name_of_station   = "RAPID CITY REGIONAL AIRPORT"
   
   
   
@@ -90,22 +147,13 @@ for (target_year in c(1950:1950)){    # add manually
   precip_workspace_depth[precip_workspace_depth == 9999] = NA 
   
   precip_workspace_depth_01hrly =  precip_workspace_depth
-  precip_workspace_depth_03hrly =  precip_workspace_depth
-  precip_workspace_depth_06hrly =  precip_workspace_depth
-  precip_workspace_depth_12hrly =  precip_workspace_depth
-  precip_workspace_depth_24hrly =  precip_workspace_depth
+
   
   precip_workspace_depth_01hrly[precip_workspace_time_interval != 01]  =  NA
-  precip_workspace_depth_03hrly[precip_workspace_time_interval != 03]  =  NA
-  precip_workspace_depth_06hrly[precip_workspace_time_interval != 06]  =  NA
-  precip_workspace_depth_12hrly[precip_workspace_time_interval != 12]  =  NA
-  precip_workspace_depth_24hrly[precip_workspace_time_interval != 24]  =  NA
+
   
   targ_data$precip_01hr = precip_workspace_depth_01hrly
-  targ_data$precip_03hr = precip_workspace_depth_03hrly
-  targ_data$precip_06hr = precip_workspace_depth_06hrly
-  targ_data$precip_12hr = precip_workspace_depth_12hrly
-  targ_data$precip_24hr = precip_workspace_depth_24hrly
+
   
   targ_data = isd_transform(targ_data)
   
@@ -199,34 +247,41 @@ for (target_year in c(1950:1950)){    # add manually
   
   targ_data$GF1_total_cloud_cover_fraction[targ_data$GF1_total_cloud_cover_fraction==99] = NA
   
-  start_date = as.POSIXct(paste(target_year,
-                                "-01-01 01:00:00 UTC",
-                                sep=""),
-                          tz = "UTC")
   
-  end_date   = as.POSIXct(paste((target_year+1),
+  ###############
+  
+  
+  start_date = as.POSIXct(paste(target_year,
                                 "-01-01 00:00:00 UTC",
                                 sep=""),
                           tz = "UTC")
   
-  hour_time = seq.POSIXt(from = start_date,
-                         to   = end_date,
+  
+  end_date   = as.POSIXct(paste((target_year),
+                                "-12-31 23:00:00 UTC",
+                                sep=""),
+                          tz = "UTC")
+  
+  hour_time = seq.POSIXt(from = max(c(start_date,
+                                      start_date_for_full_record)),
+                         to   = min(c(end_date,
+                                      end_date_for_full_record)),
                          by   = "1 hour",
                          tz   = "UTC")
   
-  
-  time_start_in_seconds = as.numeric(interval(start = "2006-01-01 00:00:00 UTC",
+ 
+  time_start_in_reference_seconds = as.numeric(interval(start = "2006-01-01 00:00:00 UTC",
                                               end   = min(hour_time),
                                               tzone = tz(start)) )
   
-  time_end_in_seconds   = as.numeric(interval(start = "2006-01-01 00:00:00 UTC",
+  time_end_in_reference_seconds   = as.numeric(interval(start = "2006-01-01 00:00:00 UTC",
                                               end   = max(hour_time),
                                               tzone = tz(start)) )
   
   hourly_interval = as.double(3600)
   
-  time_in_netcdf_units = seq(from = time_start_in_seconds, 
-                             to   = time_end_in_seconds, 
+  time_in_netcdf_units = seq(from = time_start_in_reference_seconds, 
+                             to   = time_end_in_reference_seconds, 
                              by   =  hourly_interval)  
   
   targ_time_series                  = data.frame(date = hour_time)
@@ -246,7 +301,7 @@ for (target_year in c(1950:1950)){    # add manually
                                              method = "linear",
                                              xout   = hour_time)$y 
   
-  targ_time_series$press_msl_hPa    = approx(x      = targ_data$date_time,
+    targ_time_series$press_msl_hPa    = approx(x      = targ_data$date_time,
                                              y      = targ_data$air_pressure,
                                              method = "linear",
                                              xout   = hour_time)$y
@@ -260,11 +315,13 @@ for (target_year in c(1950:1950)){    # add manually
                                               y      = targ_data$wind_direction,
                                               method = "linear",
                                               xout   = hour_time)$y
-  
-  targ_time_series$ISD_precip_01hr   = approx(x      = targ_data$date_time,
-                                              y      = targ_data$precip_01hr,
-                                              method = "constant",
-                                              xout   = hour_time)$y
+
+    targ_time_series$ISD_precip_01hr   = approx(x      = targ_data$date_time,
+                                                y      = targ_data$precip_01hr,
+                                                method = "constant",
+                                                xout   = hour_time)$y
+
+
   
   output_file_name = paste(storage_directory, 
                            output_file_name_prefix,
@@ -337,14 +394,14 @@ for (target_year in c(1950:1950)){    # add manually
   
     
   netcdf_temp      = ncvar_def(nam      = "air_temperature",
-                               units    = "deg_C",
+                               units    = "degC",
                                dim      = netcdf_time_dim,
                                missval  = fill_value,
                                longname = "2-m Air Temperature",
                                prec     ="single")
   
   netcdf_dewpoint  = ncvar_def(nam      = "dew_point_temperature",
-                               units    = "deg_C",
+                               units    = "degC",
                                dim      = netcdf_time_dim,
                                missval  = fill_value,
                                longname = "2-m Dew Point Temperature",

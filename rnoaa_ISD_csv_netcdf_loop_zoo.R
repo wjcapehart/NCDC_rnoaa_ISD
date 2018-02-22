@@ -15,7 +15,9 @@ stations_near_targ = isd_stations_search(lat    =   44.0444325,  # degrees_north
                                          lon    = -103.0565652,  # degrees_east
                                          radius =   300.)  # km
 
-
+#stations_near_targ = isd_stations_search(lat    =   43.021062,  # degrees_north
+#                                         lon    = -102.518834,  # degrees_east
+#                                         radius =   300.)  # km
 print(stations_near_targ)
 
 station_list_number       = 1 # indicing starts at 1   # add manually, this is for the search
@@ -73,8 +75,8 @@ station_list_number_label = 1 # indicing starts at 1   # add manually, this is f
 
 for (target_year in year(start_date_for_full_record):year(end_date_for_full_record))   {    # add manually                      
   
-  file_title_string = "KRCA"
-  name_of_station   = "ELLSWORTH AFB"
+  file_title_string = "KEIN"
+  name_of_station   = "PINE RIDGE AIRPORT"
   
   
   

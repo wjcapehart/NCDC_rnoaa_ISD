@@ -17,7 +17,7 @@ library("rlist")
 
 # my common loc ids : SD->FIPS:46  NAMIBIA->FIPS:WA CHEYENNE->HUC:101202 & HUC:101201
 
-ncdc_ids = ncdc_stations(locationid = 'FIPS:46',
+ncdc_ids = ncdc_stations(locationid = 'FIPS:46103',
                          datasetid  = 'GHCND',
                          limit      = 1000)
 
@@ -585,10 +585,10 @@ for (ncdc_index in 1:total_number_of_stations) {
                            ".csv",
                            sep="")
 
-#  write.csv(x    = targ_time_series_raw,
-#            file = output_file_name,
-#            row.names = FALSE)
-#
+  write.csv(x    = targ_time_series_raw,
+            file = output_file_name,
+            row.names = FALSE)
+
 
   remove(targ_time_series_raw)
 
