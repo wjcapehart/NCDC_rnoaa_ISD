@@ -11,8 +11,8 @@ library("zoo")
 library("openair")
 
 
-stations_near_targ = isd_stations_search(lat    =   44.0444325,  # degrees_north
-                                         lon    = -103.0565652,  # degrees_east
+stations_near_targ = isd_stations_search(lat    =   43.5827,  # degrees_north
+                                         lon    = -96.7404,  # degrees_east
                                          radius =   300.)  # km
 
 #stations_near_targ = isd_stations_search(lat    =   43.021062,  # degrees_north

@@ -15,9 +15,9 @@ library("rlist")
 
 
 
-# my common loc ids : SD->FIPS:46  NAMIBIA->FIPS:WA CHEYENNE->HUC:101202 & HUC:101201
+# my common loc ids : SD->FIPS:46  NAMIBIA->FIPS:WA CHEYENNE->HUC:101202 & HUC:101201: Pennington ->FIPS:46103
 
-ncdc_ids = ncdc_stations(locationid = 'FIPS:46103',
+ncdc_ids = ncdc_stations(locationid = 'HUC:101201',
                          datasetid  = 'GHCND',
                          limit      = 1000)
 
@@ -32,7 +32,7 @@ print(ncdc_ids)
 
 total_number_of_stations = length(ncdc_ids$name)
 
-for (ncdc_index in 1:total_number_of_stations) {
+for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
 
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -602,6 +602,7 @@ for (ncdc_index in 1:total_number_of_stations) {
                                   ".nc",
                                   sep="")
 
+  
   netcdf_time_dim  = ncdim_def(name  = "time",
                                units = "days since 1970-01-01 00:00:00",
                                val   = Days_from_1970_01_01,
@@ -614,12 +615,19 @@ for (ncdc_index in 1:total_number_of_stations) {
                                unlim = FALSE,
                                create_dimvar=FALSE)
 
-
+  netcdf_bounds_dim  = ncdim_def(name  = "bnds",
+                                 units = "",
+                                 val   = 1:2,
+                                 unlim = FALSE,
+                                 create_dimvar = FALSE)
+  
+  
 
 
   fill_value = 9.96921e+36
 
-
+  fill_value_double = 9.969209968386869e+36
+  
   netcdf_stn = ncvar_def(nam      = "station_name",
                          units    = "",
                          dim      = netcdf_name_dim,
@@ -645,8 +653,24 @@ for (ncdc_index in 1:total_number_of_stations) {
                          longname = "Elevation",
                          prec     = "single")
 
+  bnds = 1:2
+  
+  time_bounds = array( 0,  
+                       dim      = c(2,length(Days_from_1970_01_01)), 
+                       dimnames = list(bnds,Days_from_1970_01_01))
+  
+  time_bounds[1,] = Days_from_1970_01_01
+  time_bounds[2,] = Days_from_1970_01_01 + 1
+  
+  netcdf_time_bounds   = ncvar_def(nam      = "time_bnds",
+                                   units    = "days since 1970-01-01 00:00:00",
+                                   dim      = list(netcdf_bounds_dim,
+                                                   netcdf_time_dim),
+                                   longname = "Time Bounds",
+                                   prec     = "double")  
 
-  netcdf_available_variables = list(netcdf_lat,
+  netcdf_available_variables = list(netcdf_time_bounds,
+                                    netcdf_lat,
                                     netcdf_lon,
                                     netcdf_alt,
                                     netcdf_stn)
@@ -875,6 +899,14 @@ ncatt_put(nc         = nc_ghcn,
             verbose    = FALSE,
             definemode = FALSE )
 
+  ncatt_put(nc         = nc_ghcn,
+            varid      = netcdf_alt,
+            attname    = "axis",
+            attval     = "Z",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )
+  
    ncatt_put(nc         = nc_ghcn,
              varid      = netcdf_alt,
              attname    = "positive",
@@ -895,6 +927,15 @@ ncatt_put(nc         = nc_ghcn,
             varid      = netcdf_lon,
             attname    = "standard_name",
             attval     = "longitude",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )
+  
+  
+  ncatt_put(nc         = nc_ghcn,
+            varid      = netcdf_lon,
+            attname    = "axis",
+            attval     = "X",
             prec       = NA,
             verbose    = FALSE,
             definemode = FALSE )
@@ -923,7 +964,60 @@ ncatt_put(nc         = nc_ghcn,
             verbose    = FALSE,
             definemode = FALSE )
 
+  ncatt_put(nc         = nc_ghcn,
+            varid      = netcdf_lat,
+            attname    = "axis",
+            attval     = "Y",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn,
+            varid      = "time",
+            attname    = "description",
+            attval     = "time",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )
+  
+  ncatt_put(nc         = nc_ghcn,
+            varid      = "time",
+            attname    = "bounds",
+            attval     = "time_bnds",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )    
 
+  ncatt_put(nc         = nc_ghcn,
+            varid      = "time",
+            attname    = "axis",
+            attval     = "T",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )    
+  
+  ncatt_put(nc         = nc_ghcn,
+            varid      = netcdf_time_bounds,
+            attname    = "description",
+            attval     = "Time Bounds",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )  
+  
+  ncatt_put(nc         = nc_ghcn,
+            varid      = netcdf_time_bounds,
+            attname    = "standard_name",
+            attval     = "time",
+            prec       = NA,
+            verbose    = FALSE,
+            definemode = FALSE )  
+  
+
+  
+  
+  
+  
+  
 
   if ("TMAX" %in% available_datafields) {
       ncatt_put(nc         = nc_ghcn,
@@ -945,7 +1039,7 @@ ncatt_put(nc         = nc_ghcn,
       ncatt_put(nc         = nc_ghcn,
               varid      = netcdf_tmax,
               attname    = "description",
-              attval     = "2-m Minimium Daily Air Temperature",
+              attval     = "2-m Maximum Daily Air Temperature",
               prec       = NA,
               verbose    = FALSE,
               definemode = FALSE )
@@ -1021,7 +1115,7 @@ ncatt_put(nc         = nc_ghcn,
               definemode = FALSE )
 
       ncatt_put(nc         = nc_ghcn,
-                varid      = netcdf_tmax,
+                varid      = netcdf_tavg,
                 attname    = "coordinates",
                 attval     = "time latitude longitude altitude station_name",
                 prec       = NA,
@@ -1284,12 +1378,16 @@ ncatt_put(nc         = nc_ghcn,
 
 
 
-
+  ncvar_put(nc      = nc_ghcn,
+            varid   = netcdf_time_bounds,
+            vals    = time_bounds,
+            verbose = FALSE )
 
   ncvar_put(nc      = nc_ghcn,
             varid   = netcdf_lat,
             vals    = station_latitude,
             verbose = FALSE )
+  
   remove(netcdf_lat,
          station_latitude)
 
