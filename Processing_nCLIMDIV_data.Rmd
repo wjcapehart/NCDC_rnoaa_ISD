@@ -1,0 +1,115 @@
+---
+title: "Read nCLIMDIV Data"
+output: html_notebook
+---
+
+# 1  Intro Data Pulls Divisional Climate Data
+
+
+
+# 2  Libraries
+
+The following libraries are needed for this exercise.
+
+Tidyverse Packages
+
+  + [tidyverse](https://www.tidyverse.org) : Set of commonly-used Data Science packages for R that it can install and load all at once. In the long-run you probably also want to install the tidyverse package suite anyway. For this exercise this will include...   
+    - [ggplot2](https://ggplot2.tidyverse.org) : Create Elegant Data Visualizations Using the Grammar of Graphics
+    - [tibble](https://tibble.tidyverse.org) : Simple Data Frames
+    - [tidyr](https://tidyr.tidyverse.org) : Tools for shepherding data in data frames.
+    - [readr](https://readr.tidyverse.org) : Read Rectangular Text Data
+    - [purr](https://purrr.tidyverse.org) : Functional Programming Tools
+    - [dplyr](https://dplyr.tidyverse.org) : A grammar of data manipulation
+    - [stringr](https://stringr.tidyverse.org) : Simple, Consistent Wrappers for Common String Operations
+    - [forcats](https://forcats.tidyverse.org) : Tools for Working with Categorical Variables (Factors)
+    
+  + [lubridate](https://lubridate.tidyverse.org) : Time and Date Management
+  
+  + [ggridges](https://www.rdocumentation.org/packages/ggridges/versions/0.5.1) : Ridgeline plots with ggplot2
+  
+
+
+```{r}
+
+# Libraries
+
+  # Tidyverse resources
+
+  library(package = "tidyverse") # Multiple Tidyverse Resources
+  library(package = "lubridate") # Date-Time Control
+  library(package = "ggridges")  # Ridgeline plots with ggplot2
+
+
+```
+
+
+```{r}
+
+# Pull nCLIMDIV Data from SD Mines Data Server
+
+load(file = url(description = "http://kyrill.ias.sdsmt.edu:8080/thredds/fileServer/CLASS_Examples/nCLIMDIV.Rdata"))
+
+```
+
+
+Map of NCEI Climate Zones
+https://www.ncdc.noaa.gov/monitoring-references/maps/images/us-climate-divisions.gif 
+![Map of NCEI Climate Zones](https://www.ncdc.noaa.gov/monitoring-references/maps/images/us-climate-divisions.gif)
+
+Simple Table of Climate Zones Grouped by State
+
+```{r}
+
+# Simple Table of Climate Zones Grouped by State
+
+print(unique(nCLIMDIV %>% select(Full_Zone_Code,
+                                 State_Name,
+                                 Zone_Name,
+                                 Center_Lon,
+                                 Center_Lat)))
+
+```
+
+
+```{r}
+# Display Full File of nCLIMDIV
+
+print(nCLIMDIV)
+
+```
+
+```{r}
+
+single_zone = nCLIMDIV %>% filter(Full_Zone_Code == "3904")
+
+print(single_zone)
+
+```
+
+
+```{r}
+
+old_period = single_zone %>% filter((year(Date) >= 1895) & 
+                                     year(Date) <= 1895+29)
+
+
+
+new_period = single_zone %>% filter((year(Date) >= 2018-29) & 
+                                     year(Date) <= 2018)
+
+```
+
+
+
+```{r}
+
+ggplot(data = old_period) + 
+  aes(x = Date, 
+      y = PDSI) +
+  geom_line()
+
+ggplot(data = new_period) + 
+  aes(x = Date, 
+      y = SP01)  +
+  geom_line()
+```

@@ -1,5 +1,5 @@
 storage_directory = "H:/Climate R Directory"
-storage_directory = ""
+storage_directory = "./"
 
 # setwd (storage_directory)
 library("rnoaa")

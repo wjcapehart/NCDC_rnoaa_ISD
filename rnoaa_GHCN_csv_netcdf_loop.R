@@ -1,25 +1,51 @@
 
 
-
+# Plain R Script (can't do this in a notebook that 
+#    loops through a designated region classification)
+#      [state, county, country, watershed]
+#    and extracts data from NCDC.  Saves Data as
+#      CSV and netCDF.
 
 library("rnoaa")
 library("isdparser")
 library("lubridate")
 library("ncdf4")
 library("dplyr")
-library("openair")
+# library("openair")
 library("rlist")
+library("readxl")
+library("tidyverse")
 
 
 
 
 
 
-# my common loc ids : SD->FIPS:46  NAMIBIA->FIPS:WA CHEYENNE->HUC:101202 & HUC:101201: Pennington ->FIPS:46103
+# my common loc ids : SD->FIPS:46
+#                     AK->FIPS:02
+#                     NC->FIPS:37
+#                     CA->FIPS:06
+#                     WI->FIPS:55
+#                     PA->FIPS:42
+#                     NAMIBIA->FIPS:WA 
+#                     Mongolia->FIPS:MG 
+#                     CHEYENNE->HUC:101202 &
+#                               HUC:101201
+#                     CHEYENNE->HUC:101202 &
+#                               HUC:101201
+#                     Pennington->FIPS:46103
+#                     Buncombe->FIPS:37021
+#                     Onslow->FIPS:37133
 
-ncdc_ids = ncdc_stations(locationid = 'HUC:101201',
+ncdc_ids = ncdc_stations(locationid = 'HUC:1014',
                          datasetid  = 'GHCND',
                          limit      = 1000)
+
+
+
+
+
+rdata_bigfile_name = "GHCND-GLOBAL__SLAVBARD__"
 
 n_stations = ncdc_ids$meta$pageCount
 
@@ -29,10 +55,28 @@ print(ncdc_ids)
 
 
 
+ghcn_station_information = ncdc_ids
+
+ghcn_station_information = ghcn_station_information %>% filter(latitude > 73.)
 
 total_number_of_stations = length(ncdc_ids$name)
 
-for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
+print("")
+print(" Begin Looping")
+print("")
+
+ghcn_metadata = read_excel(path = "~/GitHub/NCDC_rnoaa_ISD/GHCN_Metadata.xlsx")
+
+
+
+ghcn_station_information$mindate = as.Date(ghcn_station_information$mindate)
+ghcn_station_information$maxdate = as.Date(ghcn_station_information$maxdate)
+
+indexlist = 1:total_number_of_stations
+
+for (ncdc_index in 1:total_number_of_stations ) { 
+  
+  print( str_c (ncdc_index, ncdc_ids$name[ncdc_index], sep = " ") )
 
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -74,8 +118,14 @@ for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
 
 
 
-
-
+   ghcn_station = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                               station_latitude       = ncdc_ids$latitude[ncdc_index],
+                               station_longitude      = ncdc_ids$longitude[ncdc_index],
+                               station_altitude       = ncdc_ids$elevation[ncdc_index],
+                               ncdc_id_code           = as.character(ncdc_id_code),
+                               time                   = Date)
+   
+   print(available_datafields)
 
 
   if ("TMAX" %in% available_datafields)  {
@@ -83,41 +133,149 @@ for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
       ordered                = order(tmax_full_field$date)
       tmax_full_field$tmax[] = tmax_full_field$tmax[ordered] / 10
       tmax_full_field$date[] = tmax_full_field$date[ordered]
-  }
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = tmax_full_field$date,
+                         tmax                   = tmax_full_field$tmax)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
+      
 
+      
+                         
+      
+  }
   if ("TMIN" %in% available_datafields)  {
     tmin_full_field          = sorted_data$tmin
       ordered                = order(tmin_full_field$date)
       tmin_full_field$tmin[] = tmin_full_field$tmin[ordered] / 10
       tmin_full_field$date[] = tmin_full_field$date[ordered]
-  }
-
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = tmin_full_field$date,
+                         tmin                   = tmin_full_field$tmin)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )    
+        }
+  
   if ("TAVG" %in% available_datafields)  {
     tavg_full_field          = sorted_data$tavg
       ordered                = order(tavg_full_field$date)
       tavg_full_field$tavg[] = tavg_full_field$tavg[ordered] / 10
       tavg_full_field$date[] = tavg_full_field$date[ordered]
-  }
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = tavg_full_field$date,
+                         tavg                   = tavg_full_field$tavg)
 
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
+        }
+  
   if ("PRCP" %in% available_datafields)  {
     prcp_full_field          = sorted_data$prcp
       ordered                = order(prcp_full_field$date)
       prcp_full_field$prcp[] = prcp_full_field$prcp[ordered] / 10
       prcp_full_field$date[] = prcp_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = prcp_full_field$date,
+                         prcp                   = prcp_full_field$prcp)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
   if ("SNOW" %in% available_datafields)  {
+
     snow_full_field          = sorted_data$snow
       ordered                = order(snow_full_field$date)
       snow_full_field$snow[] = snow_full_field$snow[ordered]
       snow_full_field$date[] = snow_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = snow_full_field$date,
+                         snow                   = snow_full_field$snow)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
   if ("SNWD" %in% available_datafields)  {
+
     snwd_full_field          = sorted_data$snwd
       ordered                = order(snwd_full_field$date)
       snwd_full_field$snwd[] = snwd_full_field$snwd[ordered]
       snwd_full_field$date[] = snwd_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = snwd_full_field$date,
+                         snwd                   = snwd_full_field$snwd)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
 
@@ -126,40 +284,128 @@ for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
       ordered                = order(wesd_full_field$date)
       wesd_full_field$wesd[] = wesd_full_field$wesd[ordered] / 10
       wesd_full_field$date[] = wesd_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = wesd_full_field$date,
+                         wesd                   = wesd_full_field$wesd)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
 
   if ("WESF" %in% available_datafields)  {
+
     wesf_full_field          = sorted_data$wesf
       ordered                = order(wesf_full_field$date)
       wesf_full_field$wesf[] = wesf_full_field$wesf[ordered] / 10
       wesf_full_field$date[] = wesf_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = wesf_full_field$date,
+                         wesf                   = wesf_full_field$wesf)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
   if ("AWND" %in% available_datafields)  {
+
     awnd_full_field          = sorted_data$awnd
       ordered                = order(awnd_full_field$date)
       awnd_full_field$awnd[] = awnd_full_field$awnd[ordered] / 10
       awnd_full_field$date[] = awnd_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = awnd_full_field$date,
+                         awnd                   = awnd_full_field$awnd)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
 
   if ("AWDR" %in% available_datafields)  {
-    awdr_full_field          = sorted_data$awnd
-      ordered                = order(awnd_full_field$date)
+    print("   AWDR")
+    
+    awdr_full_field          = sorted_data$awdr
+      ordered                = order(awdr_full_field$date)
       awdr_full_field$awdr[] = awdr_full_field$awdr[ordered]
       awdr_full_field$date[] = awdr_full_field$date[ordered]
+      
+      sub = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
+                         station_latitude       = ncdc_ids$latitude[ncdc_index],
+                         station_longitude      = ncdc_ids$longitude[ncdc_index],
+                         station_altitude       = ncdc_ids$elevation[ncdc_index],
+                         ncdc_id_code           = as.character(ncdc_id_code),
+                         time                   = awdr_full_field$date,
+                         awdr                   = awdr_full_field$awdr)
+      
+      ghcn_station = full_join(ghcn_station, 
+                               sub, 
+                               by=c("station_name",
+                                    "station_latitude",
+                                    "station_longitude",
+                                    "station_altitude",
+                                    "ncdc_id_code",
+                                    "time") )
   }
 
 
 
-  remove(sorted_data,
-         ordered)
+  remove(sorted_data)
+  remove(ordered)
 
+  print("   starting netcdf")
+  
+   print(ncdc_index)
 
-
-
-
+  if (ncdc_index == 1) {
+    ghcn_stations = ghcn_station
+  } else {
+    ghcn_stations = bind_rows(ghcn_stations,
+                              ghcn_station)
+  }
+  
+  
+  
+  
+  save(gchn_station = ghcn_station,
+       file = paste(file_title_string,
+                    ".Rdata",
+                    sep=""))
+  
+  remove(ghcn_station)
 
 
   Days_from_1970_01_01 = as.numeric( as.Date(Date) )
@@ -596,8 +842,6 @@ for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
 
 
 
-
-
   netcdf_output_file_name = paste(file_title_string,
                                   ".nc",
                                   sep="")
@@ -760,7 +1004,7 @@ for (ncdc_index in 1:total_number_of_stations ) { #total_number_of_stations) {
                             units    = "kg m-2",
                             dim      = netcdf_time_dim,
                             missval  = fill_value,
-                            longname = "Liquid Snow Water Equivalent Depth on Surface",
+                            longname = "Liquid Snowfall Water Equivalent Depth on Surface",
                             prec     = "single")
     netcdf_available_variables = list.append(netcdf_available_variables,
                                              netcdf_wesf)
@@ -1518,7 +1762,6 @@ ncatt_put(nc         = nc_ghcn,
               total_number_of_stations,
               sep = ""))
   print(filename_station_label)
-  print(available_datafields)
 
 
 
@@ -1538,5 +1781,22 @@ ncatt_put(nc         = nc_ghcn,
          ncdc_id_code,
          netcdf_output_file_name,
          station_name_label)
+  
+  
+}
 
-  }
+if (1 < 0) {
+ghcn_stations$station_name = as.factor(ghcn_stations$station_name)
+ghcn_stations$ncdc_id_code = as.factor(ghcn_stations$ncdc_id_code)
+
+colnames(ghcn_station_information)[7] = "ncdc_id_code"
+save(gchn_stations = ghcn_stations,
+     ghcn_station_information = ghcn_station_information,
+     ghcn_metadata = ghcn_metadata,file = paste(rdata_bigfile_name,
+                  min(ghcn_stations$time),
+                  "--",
+                  max(ghcn_stations$time),
+                  ".Rdata",
+                  sep=""))
+
+}

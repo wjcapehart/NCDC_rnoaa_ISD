@@ -1,0 +1,561 @@
+---
+title: "Importing Daily Summary Data from the National Climatic Data Center"
+output: html_notebook
+---
+
+
+# 1 Goal
+
+The goal here is to access datasets from NCEI.  These datasets include daily, nonthly and hourly datasets.  
+
+This particular script uses the rNOAA dataset that accesses the servers the National Center for Environmental Information (NCEI)
+
+A link to the way you do this with the web system is [here](https://www.ncdc.noaa.gov/cdo-web/webservices/v2).  We'll be using R to do this for us.
+
+# 2  Libraries
+
+The following libraries are needed for this exercise.
+
+Tidyverse Packages
+
+  + [tidyverse](https://www.tidyverse.org) : Set of commonly-used Data Science packages for R that it can install and load all at once. In the long-run you probably also want to install the tidyverse package suite anyway. For this exercise this will include...   
+    - [ggplot2](https://ggplot2.tidyverse.org) : Create Elegant Data Visualizations Using the Grammar of Graphics
+    - [tibble](https://tibble.tidyverse.org) : Simple Data Frames
+    - [tidyr](https://tidyr.tidyverse.org) : Tools for shepherding data in data frames.
+    - [readr](https://readr.tidyverse.org) : Read Rectangular Text Data
+    - [purr](https://purrr.tidyverse.org) : Functional Programming Tools
+    - [dplyr](https://dplyr.tidyverse.org) : A grammar of data manipulation
+    - [stringr](https://stringr.tidyverse.org) : Simple, Consistent Wrappers for Common String Operations
+    - [forcats](https://forcats.tidyverse.org) : Tools for Working with Categorical Variables (Factors)
+    
+  + [lubridate](https://lubridate.tidyverse.org) : Time and Date Management
+  
+  + [ggridges](https://www.rdocumentation.org/packages/ggridges/versions/0.5.1) : Ridgeline plots with ggplot2
+  
+Other Packages
+
+  + [rnoaa](https://www.rdocumentation.org/packages/rnoaa/versions/0.2.0) : Climate Data Online Services from NCEI 
+    
+```{r}
+
+# Libraries
+
+  # Tidyverse resources
+
+  library(package = "tidyverse") # Multiple Tidyverse Resources
+  library(package = "lubridate") # Date-Time Control
+  library(package = "ggridges")  # Ridgeline plots with ggplot2
+
+
+  # NOAA Libraries
+
+  library(package = "rnoaa") # NCEI  Data Retrieval Package
+
+```
+
+# 3 Searching for Data
+
+## 3.1. Available Datasets
+
+The hardest part of this took is to look for the data.  For our example there are 11 datasets to access using this tool. (rnoaa will let you get other data like storm and tornado data but we're not doing that yet.) They are listed here using the [ncdc_datasets()](https://www.rdocumentation.org/packages/rnoaa/versions/0.8.4/topics/ncdc_datasets) command.
+
+```{r}
+
+# Use NCDC Datasets to gret available datasets
+
+  ncdc_datasets()$data
+  
+
+```
+
+To access these fields you can use the "id" value in the table above.  So for daily summaries from the Global Historical Climate Data Network (GHCN) you would use "GHCND".
+
+## 3.2.  Available Stations
+
+Once you have dataset the fun begins with being able to find a given station or set of stations.  
+
+There are a couple ways to do this and they use [ncdc_stations()](https://www.rdocumentation.org/packages/rnoaa/versions/0.8.4/topics/ncdc_stations)
+
+You can search by city, county, state, country, USGS watershed HUC number, zip code..
+
+The different search methods are:
+
+```{r}
+
+ncdc_locs_cats()$data
+
+```
+
+The best way to search for a region is to use the web interface from NCEI/NCDC and get a "Location ID"
+
+[https://www.ncdc.noaa.gov/cdo-web/search](https://www.ncdc.noaa.gov/cdo-web/search)
+
+Use the "search for" and you should be able to pull from one of the above categories in the lower pull-down menu to get the code.
+
+
+
+Set the limit to 1000 to make sure that you can get the total number of available of stations (so long as they are ... othwewise you will get only 25 which is the default for the function)
+
+For example:
+
+### 3.2.1 Searching based on a city location
+
+Stations within a somewhat arbitrary radius of the "CITY" of Sydney, Australia, can be found with "locationid" **CITY:AS000010**
+
+```{r}
+
+# Station List for Sydney, Australia
+
+ncdc_ids = ncdc_stations(locationid = 'CITY:AS000010', 
+                         datasetid  = 'GHCND',
+                         limit      = 1000)
+
+ncdc_ids$data
+
+```
+
+### 3.2.2 Searching based on a stations inside a given US County
+
+Stations in Pennington "CNTY" can be found using "locatoinid" **FIPS:46103** (sorry you can't tunnel down to subdivisions in other countries like New South Wales, AU)
+
+```{r}
+
+# Station List for Pennington County, SD
+
+ncdc_ids = ncdc_stations(locationid = 'FIPS:46103', 
+                         datasetid  = 'GHCND',
+                         limit      = 1000)
+
+ncdc_ids$data
+
+```
+
+### 3.2.3 Searching based on a stations inside a given US State
+
+Stations in the "ST" of South Dakota, **FIPS:46**  
+
+```{r}
+
+# Station List for South Dakota
+
+ncdc_ids = ncdc_stations(locationid = 'FIPS:46', 
+                         datasetid  = 'GHCND',
+                         limit      = 1000)
+
+ncdc_ids$data
+
+```
+
+### 3.2.4 Searching based on a stations inside a given River Basin
+
+Stations in the Rapid Creek Basin or other named USGS Stream Unit search for the "Hydrologic Accounting Unit" (HYD_ACC), **HUC:10120110** (this only works for those basins in the US)'
+
+(That station maked Lead 11S, or "11 km south of Lead is in the Rapid City Basin, not inside of Lead.)
+
+```{r}
+
+# Station List for the Rapid Creek River Basin
+
+ncdc_ids = ncdc_stations(locationid = 'HUC:10120110', 
+                         datasetid  = 'GHCND',
+                         limit      = 1000)
+
+ncdc_ids$data
+
+```
+
+### 3.2.5 Searching based on a stations inside a given country
+
+Stations in North Korea that they allow us to see, **FIPS:NK**  
+
+(those two last stations that are in "South Korea" are radar stations in South Korea whose coverages cross the border into North Korea)
+
+```{r}
+
+# Station List for the North Korea
+
+ncdc_ids = ncdc_stations(locationid = 'FIPS:KN', 
+                         limit      = 1000)
+
+ncdc_ids$data
+
+```
+
+
+# 4 Pulling In Data and Getting It Into Shape.
+
+So let's now try getting data from the Rapid City Airport.
+
+Rapid City Airport (using the data from above for Pennington County, the GHCN station ID for the airport is... **GHCND:USW00024090**)
+
+We can get the details for the station using the option "stationid = 'GHCND:USW00024090'"
+
+```{r}
+
+# Station Details for Rapid City Airport , SD
+
+stationid_for_ncdcstations = 'GHCND:USW00024090'
+
+stationid_for_ghcn_pull    = 'USW00024090'
+
+# Station Details for Corvalis Or (OSU)
+
+
+stationid_for_ncdcstations = 'GHCND:USC00351862'
+stationid_for_ghcn_pull    = 'USC00351862'
+
+
+# Station Details for Cheatah Reserve
+
+stationid_for_ncdcstations = 'GHCND:WA009181280'
+stationid_for_ghcn_pull    = 'WA009181280'
+
+
+
+
+# Station Details for NRMCAS
+
+stationid_for_ncdcstations = 'GHCND:USW00093727'
+stationid_for_ghcn_pull    = 'USW00093727'
+
+ncdc_ids = ncdc_stations(stationid = stationid_for_ncdcstations)
+
+ncdc_ids = ncdc_ids$data
+
+```
+
+
+
+Also to get an inventory of the avaialble data for this station we can use the [ncdc_datatypes()](https://www.rdocumentation.org/packages/rnoaa/versions/0.8.4/topics/ncdc_datatypes) command.
+
+```{r}
+
+# Get Available Parameters for a given station from a specific dataset
+
+ncdc_datatypes(datasetid = 'GHCND',
+               stationid = stationid_for_ncdcstations)$data
+
+```
+
+## 4.1 Pulling the Raw Data from NCDC/NCEI
+
+To pull the daily GHCN data for this station we use the [meteo_tidy_ghcnd()](https://www.rdocumentation.org/packages/rnoaa/versions/0.8.4/topics/meteo_tidy_ghcnd) function.  We should be just able to ask, again, for the station ID for the airport.
+
+```{r}
+
+# Pull the Raw Climate Data from a Single Station
+
+ghcn_data = meteo_tidy_ghcnd(stationid  = stationid_for_ghcn_pull,
+                             keep_flags = TRUE, 
+                             var        = "all",
+                             date_min   = NULL, 
+                             date_max   = NULL)
+
+# drop empty variable columns (they should already have been dropped though)
+
+ghcn_data = ghcn_data[,colSums(is.na(ghcn_data))<nrow(ghcn_data)]
+
+ghcn_data
+
+```
+
+
+
+The downside in the above output is that there are no units mentioned here.  But they *are* available on the original data website here:
+
+[https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt](https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt)
+
+From the dataset the five basic parameters are 
+
+| Code | Parameter Name                               | Units    |
+|------|----------------------------------------------|----------|
+| PRCP | Precipitation wrt 0000-0000 Local Time       | ⅒ of mm |
+| SNOW | Snowfall wrt 0000-0000 Local Time            | mm       |
+| SNWD | Snow depth wrt 0000-0000 Local Time          | mm       |
+| TMAX | Maximum temperature wrt 0000-0000 Local Time | ⅒ of °C |
+| TMIN | Minimum temperature wrt 0000-0000 Local Time | ⅒ of °C |
+
+And you may have 
+
+| Code | Parameter Name                               | Units    |
+|------|----------------------------------------------|----------|
+| TAVG | Average temperature wrt 0000-0000 UTC        | ⅒ of °C |
+
+These really are the only parameters I normally pull.
+
+
+I'm doing this by brute force and changing the temperature units to °F while I am at it...  
+
+```{r}
+
+# Changing Units
+
+
+
+
+ghcn_data$tmax = ghcn_data$tmax/10 * 9. / 5. + 32
+ghcn_data$tmin = ghcn_data$tmin/10 * 9. / 5. + 32
+
+
+```
+
+## 4.3. Patching any Missing Values
+
+Here, we will do a check to ensure a continous dataset that places "NA" for missing records [left_join()](https://www.rdocumentation.org/packages/base/versions/3.0.3/topics/cbind) function
+
+```{r}
+
+# create a date frame to set us up to accomodate missing data
+
+daily_time_frame = tibble(date = seq.Date(from = min(ghcn_data$date),
+                                          to   = max(ghcn_data$date), 
+                                          by   = "1 day"))
+
+
+ghcn_data = left_join(daily_time_frame,ghcn_data, by="date")
+
+print(ghcn_data) 
+
+remove(daily_time_frame)
+
+```
+
+
+And with that we can now [finally] play!
+
+# 5 Make a Simple Plot
+
+Let's make a simple plot for Tmin
+
+```{r}
+
+ggplot(data = ghcn_data) +   # use ghcn_data as the source of the data
+  
+  aes(x = date,              # select specific fields to plot
+      y = tmin) +
+
+  theme_bw() +              # use a very simple ploting theme
+  
+  ggtitle(label    = "Daily Global Historical Climate Data",
+          subtitle = str_c(ncdc_ids$name,
+                           " :: ",
+                           stationid_for_ncdcstations)) + 
+  
+  xlab(label = "Date") +
+  
+  ylab(label = "Minimum Daily Temperature (°F)") +
+  
+  geom_line(color = "blue")  # make a simple line plot (and make it pink)
+
+
+```
+
+We can alsos take a close look at any flags for that parameter.
+
+
+```{r}
+
+# get the tmin record in this case.
+
+ghcn_tmin = ghcn_data %>% select(c("date",
+                                   ends_with("tmin")))
+
+ghcn_tmin %>% filter(qflag_tmin != " ")
+
+```
+```{r}
+
+ggplot(data = ghcn_data) +   # use ghcn_data as the source of the data
+  
+  aes(x = date,              # select specific fields to plot
+      y = tmax) +
+
+  theme_bw() +              # use a very simple ploting theme
+  
+  ggtitle(label    = "Daily Global Historical Climate Data",
+          subtitle = str_c(ncdc_ids$name,
+                           " :: ",
+                           stationid_for_ncdcstations)) + 
+  
+  xlab(label = "Date") +
+  
+  ylab(label = "Maximum Daily Temperature (°F)") +
+  
+  geom_line(color = "red")  # make a simple line plot (and make it pink)
+
+
+```
+
+We can alsos take a close look at any flags for that parameter.
+
+
+```{r}
+
+# get the tmin record in this case.
+
+ghcn_tmax = ghcn_data %>% select(c("date",
+                                   ends_with("tmax")))
+
+ghcn_tmax %>% filter(qflag_tmax != " ")
+
+```
+
+# 6 Make a Fancy Plot to Show Changes in Climate
+
+Now let's fancy.  Let's see how max and min tempertures for each month changes over time.
+
+Let's chose some 30-y periods at the beginning and end of the record just as a demo.  (You can add more periods if you want)
+
+Let's chose two parameters. Max and Minimum Temperatures
+
+First, let's change the data frame so that we have only min and max temperatures
+
+```{r}
+
+# pull only the min and max temps
+
+temp_data = ghcn_data %>% select(c(date, 
+                                   tmax, 
+                                   tmin))
+
+```
+
+
+We'll start by creating an additional data column to represent the decade we'll use the [year()](https://www.rdocumentation.org/packages/lubridate/versions/1.7.4/topics/year) function to do this.
+
+```{r}
+
+# Create a year parameter
+
+temp_data$year = year(temp_data$date) 
+
+# Turn it into a string that displays the start and end year of the decade
+
+```
+
+And add another variable for the calendar month
+
+```{r}
+
+# add month
+
+temp_data$month = month(x     = temp_data$date,
+                        label = TRUE,
+                        abbr  = TRUE)
+
+```
+
+
+And filter only the periods we want to use
+
+```{r}
+
+# first full year (use the lowest date where the DOY via yday == 1)
+
+period_1_year_start = year(min(temp_data$date[yday(temp_data$date)==1]))
+period_1_year_end   = period_1_year_start + (30 - 1)
+
+period_1_string     = str_c(period_1_year_start,
+                            "-",
+                            period_1_year_end,
+                            sep = "")
+
+
+# most recent year period
+
+period_3_year_start = 2018 - (30 - 1)
+period_3_year_end   = 2018
+period_3_string     = str_c(period_3_year_start,
+                            "-",
+                            period_3_year_end,
+                            sep = "")  
+
+# a period in the middle
+
+period_2_year_start = round((period_1_year_start + period_3_year_start) / 2 )
+period_2_year_end   = round((period_1_year_end   + period_3_year_end) / 2 )
+period_2_string     = str_c(period_2_year_start,
+                            "-",
+                            period_2_year_end,
+                            sep = "")  
+  
+
+# extract these two periods
+
+temp_data = temp_data %>% 
+  filter(( (year(date) >= period_1_year_start)  & 
+           (year(date) <= period_1_year_end   ) ) |
+         ( (year(date) >= period_2_year_start)  & 
+           (year(date) <= period_2_year_end   ) ) |
+         ( (year(date) >= period_3_year_start)  & 
+           (year(date) <= period_3_year_end   ) ) )
+
+temp_data = temp_data %>% 
+  mutate(Period = case_when((year(date) >= period_1_year_start)  & (year(date) <= period_1_year_end ) ~ period_1_string,
+                            (year(date) >= period_2_year_start)  & (year(date) <= period_2_year_end ) ~ period_2_string,
+                            (year(date) >= period_3_year_start)  & (year(date) <= period_3_year_end ) ~ period_3_string))
+
+temp_data$Period = as.factor(temp_data$Period)
+
+```
+
+
+Make a ridge plot by month
+
+
+```{r}
+
+# ridgeplot
+
+ggplot(data = temp_data) +
+  
+    
+  aes(x    = tmax,
+      y    = fct_rev(month),
+      fill = Period) +
+  
+  theme_bw() + 
+  
+    
+  ggtitle(label    = "Daily Global Historical Climate Data",
+          subtitle = str_c(ncdc_ids$name,
+                           " :: ",
+                           stationid_for_ncdcstations)) + 
+  
+    
+  ylab(label = "Month") +
+  
+  xlab(label = "Daily Temperature (°F)") +
+  
+  
+
+  scale_fill_manual(values=c("blue",
+                             "yellow",
+                             "red"))+
+
+  
+  geom_density_ridges2(alpha = 0.25,
+                       color = NA) +
+
+  geom_density_ridges2(mapping = aes(x    = tmin,
+                                     y    = fct_rev(month),
+                                     fill = Period),
+                       alpha   = 0.25,
+                       color   = NA) 
+
+```
+
+# SCAVENGER HUNT
+
+1) Take the gchn data set
+2) Find Yearly Max-Max Temp, Min-Min Temp, Max-Daily Precip
+3) Try your method for getting max min returns 
+
+```{r}
+
+write.csv(x    =  ghcn_data, 
+          file = str_c("./GHCN_",
+                       unique(stationid_for_ghcn_pull),
+                       ".csv"))
+```
+

@@ -1,0 +1,294 @@
+
+
+
+```{r}
+
+library(package   = "tidyverse")
+library(package   = "lubridate")
+
+{
+#######################################################
+#
+# Credit for Split Violin Plot for GGPLOT2 Library
+#   
+# Jan Gleixner & Wouter van der Bijl : https://stackoverflow.com/questions/35717353/split-violin-plot-with-ggplot2/45614547#45614547
+#
+  GeomSplitViolin <- ggproto("GeomSplitViolin", 
+                             GeomViolin, 
+                             draw_group = function(self, 
+                                                   data, 
+                                                   ..., 
+                                                   draw_quantiles = NULL) {
+                               
+      # Original function by Jan Gleixner (@jan-glx)
+      # Adjustments by Wouter van der Bijl (@Axeman)
+                               
+      data <- transform(data, 
+                        xminv = x - violinwidth * (x - xmin), 
+                        xmaxv = x + violinwidth * (xmax - x))
+      
+      grp <- data[1, "group"]
+      
+      newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) 
+                                                     xminv 
+                                                   else 
+                                                     xmaxv), 
+                               if (grp %% 2 == 1) 
+                                 y 
+                               else 
+                                 -y)
+      
+      newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+      
+      newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+      
+      if (length(draw_quantiles) > 0 & 
+          !scales::zero_range(range(data$y))) {
+        
+        stopifnot(all(draw_quantiles >= 0), 
+                  all(draw_quantiles <= 1))
+        
+        quantiles <- create_quantile_segment_frame(data, 
+                                                   draw_quantiles, 
+                                                   split = TRUE,
+                                                   grp   = grp)
+        aesthetics <- data[rep(1, 
+                               nrow(quantiles)), 
+                           setdiff(names(data), 
+                                   c("x", "y")), 
+                           drop = FALSE]
+        
+        aesthetics$alpha <- rep(1, 
+                                nrow(quantiles))
+        
+        both <- cbind(quantiles, 
+                      aesthetics)
+        
+        quantile_grob <- GeomPath$draw_panel(both, ...)
+        
+        ggplot2:::ggname("geom_split_violin", 
+                         grid::grobTree(GeomPolygon$draw_panel(newdata, 
+                                                               ...), 
+                                        quantile_grob))
+        
+      } else {
+        
+        ggplot2:::ggname("geom_split_violin", 
+                         GeomPolygon$draw_panel(newdata, 
+                                                ...))
+        
+      }
+    }
+  )
+  
+  create_quantile_segment_frame <- function(data, 
+                                            draw_quantiles, 
+                                            split = FALSE, 
+                                            grp = NULL) 
+    {
+    
+    dens <- cumsum(data$density) / sum(data$density)
+    
+    ecdf <- stats::approxfun(dens, 
+                             data$y)
+    
+    ys <- ecdf(draw_quantiles)
+    
+    violin.xminvs <- (stats::approxfun(data$y, 
+                                       data$xminv))(ys)
+    
+    violin.xmaxvs <- (stats::approxfun(data$y, 
+                                       data$xmaxv))(ys)
+    
+    violin.xs <- (stats::approxfun(data$y, 
+                                   data$x))(ys)
+    
+    if (grp %% 2 == 0) {
+      
+      data.frame(x     = ggplot2:::interleave(violin.xs, 
+                                              violin.xmaxvs),
+                 y     = rep(ys, each = 2), 
+                 group = rep(ys, each = 2))
+      
+    } else {
+      data.frame(x     = ggplot2:::interleave(violin.xminvs,
+                                              violin.xs),
+                 y     = rep(ys, each = 2), 
+                 group = rep(ys, each = 2))
+    }
+  }
+  
+  geom_split_violin <- function(mapping        = NULL, 
+                                data           = NULL, 
+                                stat           = "ydensity", 
+                                position       = "identity", 
+                                ..., 
+                                draw_quantiles = NULL, 
+                                trim           = TRUE, 
+                                scale          = "area", 
+                                na.rm          = FALSE, 
+                                show.legend    = NA, 
+                                inherit.aes    = TRUE) {
+    
+    layer(data        = data, 
+          mapping     = mapping, 
+          stat        = stat, 
+          geom        = GeomSplitViolin, 
+          position    = position, 
+          show.legend = show.legend, 
+          inherit.aes = inherit.aes, 
+          params      = list(trim          = trim, 
+                             scale         = scale, 
+                             draw_quantiles = draw_quantiles, 
+                             na.rm          = na.rm, 
+                             ...))
+  }
+#
+#######################################################
+}
+
+```
+
+
+```{r}
+load("/Users/wjc/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata")
+
+
+subset = nCLIMDIV %>% 
+  filter(State_Name == "South Dakota") %>% 
+  select(Date, 
+         Full_Zone_Code, 
+         State_Name, 
+         Zone_Name, 
+         Center_Lon, 
+         Center_Lat,
+         TMAX,
+         TMIN,
+         TMPC,
+         PCPN) %>%
+  mutate(Month = month(Date, label=TRUE))
+
+
+space_between_periods = 10
+climate_period_length = 30
+
+decades = tibble(year_start = seq(from = 1940, 
+                                  to   = 1991, 
+                                  by   = space_between_periods))
+
+
+decades = decades %>%
+  mutate(year_end = year_start + climate_period_length - 1)  %>% 
+  mutate(decade2   = str_c(year_start, year_end, sep="\n"),
+         decade   = str_c(year_start, year_end, sep="-"))
+
+subset = gather(subset,key="Parameter", value="value",
+                TMAX,TMIN,TMPC,PCPN)
+         
+myzones = factor(unique(subset$Zone_Name))
+mystate = unique(subset$State_Name)
+```
+
+```{r}
+
+n_decades = nrow(decades)
+
+for (i in 1:nrow(decades))
+{
+  print(decades$decade[i])
+  temp = subset %>% 
+    filter((year(Date) >= decades$year_start[i]) &
+           (year(Date) <= decades$year_end[i])   )  %>%
+    rename(Decade = Date) %>%
+    mutate(Decade  = decades$decade[i],
+           Decade2 = decades$decade2[i])
+  
+  if (i == 1)
+  {
+    decade_data = temp
+  } else {
+    decade_data = rbind(decade_data, temp)
+  }
+  
+}
+
+
+
+
+
+```
+
+```{r}
+subset = decade_data %>%
+  filter((Parameter == "TMPC")  ) 
+
+print(myzones)
+ggplot(data = subset) +
+  aes(y     = Decade,
+      x     = value,
+      fill = Decade) +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background =element_rect(fill="white")) +
+  labs(title = "Monthly Average Temperature",
+       subtitle  = mystate) +
+  xlab("Temperature (deg C)")+
+  ylab("Decade")+
+  facet_wrap(~Zone_Name) +
+  geom_violin(orientation = "y",
+              trim = TRUE,color=NA)
+
+```
+
+```{r}
+subset = decade_data %>%
+  filter((Parameter == "PCPN")  ) 
+
+print(myzones)
+ggplot(data = subset) +
+  aes(y     = Decade,
+      x     = value,
+      fill = Decade) +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background =element_rect(fill="white")) +
+  labs(title = "Monthly Total Precipitation",
+       subtitle  = mystate) +
+  xlab("Precipitation (mm)")+
+  ylab("Decade")+
+  facet_wrap(~Zone_Name) +
+  geom_violin(orientation = "y",
+              trim = TRUE, 
+              color=NA)
+
+```
+
+```{r}
+
+
+
+
+subset = decade_data %>%
+  filter((Parameter == "TMIN") | (Parameter == "TMAX") ) 
+
+print(myzones)
+ggplot(data = subset) +
+  aes(x     = Decade2,
+      y     = value,
+      fill  = Parameter,
+      color = Decade) +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background =element_rect(fill="white")) +
+  labs(title = "Monthly Max and Min Temperature",
+       subtitle  = mystate) +
+  ylab("Temperature (deg C)")+
+  xlab("Decade")+
+  facet_wrap(~Zone_Name) +
+  
+       geom_split_violin(alpha   = 0.75,
+                         trim    = TRUE, color=NA) 
+
+```
+
+

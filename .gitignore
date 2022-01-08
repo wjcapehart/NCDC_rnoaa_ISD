@@ -1,9 +1,9 @@
-
-
-
 *.csv
-
 *.nc
-
-
+.RData
+.Rdata
+*.RData
+*.Rdata
 Rplots.pdf
+.Rproj.user
+.Rhistory

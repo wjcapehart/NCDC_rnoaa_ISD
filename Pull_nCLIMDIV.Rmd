@@ -1,0 +1,288 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+
+# Libraries 
+
+library(package = "tidyverse")
+setOldClass(c("tbl_df", "tbl", "data.frame"))
+
+```
+
+
+```{r}
+
+nCLIMDIV_Metadata = tibble(Variable  = c("tmax",
+                                    "tmin",
+                                    "tmpc",
+                                    "cddc",
+                                    "hddc",
+                                    "pcpn",
+                                    "pdsi",
+                                    "phdi",
+                                    "pmdi",
+                                    "sp01",
+                                    "sp02",
+                                    "sp03",
+                                    "sp06",
+                                    "sp09",
+                                    "sp12",
+                                    "sp24",
+                                    "zndx"),
+                   param_code   = c(27,  #  "tmax"
+                                    28,  #  "tmin",
+                                    02,  #  "tmpc",
+                                    26,  #  "cddc",
+                                    25,  #  "hddc",
+                                    01,  #  "pcpn",
+                                    05,  #  "pdsi",
+                                    06,  #  "phdi",
+                                    08,  #  "pmdi",
+                                    71,  #  "sp01",
+                                    72,  #  "sp02",
+                                    73,  #  "sp03",
+                                    74,  #  "sp06",
+                                    75,  #  "sp09",
+                                    76,  #  "sp12",
+                                    77,  #  "sp24",
+                                    07),  #  "zndx"
+                   long_name    = c("Maximum Monthly Temperature",  #  "tmax"
+                                    "Minimim Monthly Temperature",  #  "tmin",
+                                    "Mean Monthly Temperature",     #  "tmpc",
+                                    "Cooling Degree Days",          #  "cddc",
+                                    "Heating Degree Days",  #  "hddc",
+                                    "Monthly Total Precipitation",  #  "pcpn",
+                                    "Palmer Drought Severity Index",  #  "pdsi",
+                                    "Palmer Hydrological Drought Index",  #  "phdi",
+                                    "Modified Palmer Drought Severity Index",  #  "pmdi",
+                                    "Modified Palmer Drought Severity Index",  #  "sp01",
+                                    "2-mo Standardized Precipitation Index",  #  "sp02",
+                                    "3-mo Standardized Precipitation Index",  #  "sp03",
+                                    "6-mo Standardized Precipitation Index",  #  "sp06",
+                                    "9-mo Standardized Precipitation Index",  #  "sp09",
+                                    "12-mo Standardized Precipitation Index",  #  "sp12",
+                                    "24-mo Standardized Precipitation Index",  #  "sp24",
+                                    'Palmer "Z" Index'),  #  "zndx"
+                   units        = c("deg C",  #  "tmax"
+                                    "deg C",  #  "tmin",
+                                    "deg C",  #  "tmpc",
+                                    NA,          #  "cddc",
+                                    NA,  #  "hddc",
+                                    "kg m-2",  #  "pcpn",
+                                    NA,  #  "pdsi",
+                                    NA,  #  "phdi",
+                                    NA,  #  "pmdi",
+                                    NA,  #  "sp01",
+                                    NA,  #  "sp02",
+                                    NA,  #  "sp03",
+                                    NA,  #  "sp06",
+                                    NA,  #  "sp09",
+                                    NA,  #  "sp12",
+                                    NA,  #  "sp24",
+                                    NA),  #  "zndx"
+                   )
+
+root_url = "ftp://ftp.ncdc.noaa.gov/pub/data/cirs/climdiv/"
+
+version = "v1.0.0"
+
+datecode = read_lines(file = url(description = "ftp://ftp.ncdc.noaa.gov/pub/data/cirs/climdiv/procdate.txt"))
+
+
+nCLIMDIV_Metadata$nCLIMDIV_Version      = version
+nCLIMDIV_Metadata$nCLIMDIV_Release_Date = as.Date(datecode, tryFormats = "%Y%m%d")
+
+
+```
+
+
+```{r}
+
+# read raw data into a single huge file 
+
+column_names = c("header",
+                 "01",
+                 "02",
+                 "03",
+                 "04",
+                 "05",
+                 "06",
+                 "07",
+                 "08",
+                 "09",
+                 "10",
+                 "11",
+                 "12",
+                 "deleteme")
+
+
+col_types    = "cnnnnnnnnnnnnl"
+
+
+for (var in nCLIMDIV_Metadata$Variable) {
+  
+  file_string = str_c("climdiv",
+                      "-",
+                      var,
+                      "dv-",
+                      version,
+                      "-",
+                      datecode,
+                      sep = "")
+  
+  url_string = str_c(root_url,
+                     file_string,
+                     sep = "")
+  
+  print(url_string)
+  
+  input_table = read_delim(file      = url(description = url_string),
+                           delim     = " ",
+                           col_names = column_names,
+                           col_types = col_types)
+  
+  input_table = input_table %>% select(-deleteme)
+  
+  if (var == nCLIMDIV_Metadata$Variable[1]) {
+    nCLIMDIV = input_table
+  } else {
+    nCLIMDIV = rbind(nCLIMDIV,
+                     input_table)
+  }
+  
+  remove(input_table)
+                           
+}
+
+remove(col_types)
+remove(column_names)
+remove(url_string)
+remove(root_url)
+remove(file_string)
+remove(datecode)
+remove(version)
+remove(var)
+
+```
+
+```{r}
+
+nCLIMDIV = gather(data  = nCLIMDIV,
+                   key   = "month",
+                   value = "Value",
+                   '01',
+                   '02',
+                   '03',
+                   '04',
+                   '05',
+                   '06',
+                   '07',
+                   '08',
+                   '09',
+                   '10',
+                   '11',
+                   '12')
+
+
+nCLIMDIV$Full_Zone_Code = str_sub(string = nCLIMDIV$header, 
+                                  start  =  1,
+                                  end    =  4)
+
+nCLIMDIV$param_code     = str_sub(string = nCLIMDIV$header, 
+                                  start  =  5,
+                                  end    =  6)  
+
+nCLIMDIV$param_code = as.numeric(nCLIMDIV$param_code)
+
+nCLIMDIV$year           = str_sub(string = nCLIMDIV$header, 
+                                  start  =  7,
+                                  end    = 10) 
+
+
+nCLIMDIV = left_join(x  = nCLIMDIV,
+                     y  = nCLIMDIV_Metadata,
+                     by = "param_code")
+
+nCLIMDIV$Variable  = str_to_upper(string = nCLIMDIV$Variable, 
+                                  locale = "en")
+
+nCLIMDIV$Date = as.Date(str_c(nCLIMDIV$year,
+                              "-",
+                              nCLIMDIV$month,
+                              "-15",
+                              sep = ""))
+
+
+
+nCLIMDIV = nCLIMDIV %>% select(Full_Zone_Code,
+                               Date,
+                               Variable,
+                               Value)
+
+nCLIMDIV = spread(data  = nCLIMDIV,
+                  key   = Variable,
+                  value = Value)
+
+nCLIMDIV = nCLIMDIV %>% filter(CDDC >= 0)
+
+nCLIMDIV = nCLIMDIV %>% mutate(SP01 = ifelse(SP01 < -99.9, NA, SP01),
+                               SP02 = ifelse(SP02 < -99.9, NA, SP02),
+                               SP03 = ifelse(SP03 < -99.9, NA, SP03),
+                               SP06 = ifelse(SP06 < -99.9, NA, SP06),
+                               SP09 = ifelse(SP09 < -99.9, NA, SP09),
+                               SP12 = ifelse(SP12 < -99.9, NA, SP12),
+                               SP24 = ifelse(SP24 < -99.9, NA, SP24))
+
+```
+
+```{r}
+nCLIMDIV = nCLIMDIV %>% mutate(TMAX =   round((TMAX - 32.0) * 5./9., digits = 2),
+                               TMIN =   round((TMIN - 32.0) * 5./9., digits = 2),
+                               TMPC =   round((TMPC - 32.0) * 5./9., digits = 2),
+                               PCPN =   round( PCPN * 25.4,          digits = 3))
+
+
+
+nCLIMDIV_Metadata$Variable = str_to_upper(string = nCLIMDIV_Metadata$Variable, 
+                                          locale = "en")
+
+
+```
+
+```{r}
+
+nCLIMDIV_LUT = read_csv(file = "~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV_LUT.csv")
+
+nCLIMDIV_LUT$Full_Zone_Code = factor(nCLIMDIV_LUT$Full_Zone_Code, levels=unique(nCLIMDIV_LUT$Full_Zone_Code))
+nCLIMDIV_LUT$State_Name     = factor(nCLIMDIV_LUT$State_Name,     levels=unique(nCLIMDIV_LUT$State_Name))
+nCLIMDIV_LUT$Zone_Name      = factor(nCLIMDIV_LUT$Zone_Name,      levels=unique(nCLIMDIV_LUT$Zone_Name))
+
+nCLIMDIV = left_join(nCLIMDIV,
+                     nCLIMDIV_LUT,
+                     by = "Full_Zone_Code")
+
+
+nCLIMDIV$Full_Zone_Code = factor(nCLIMDIV$Full_Zone_Code, levels=unique(nCLIMDIV_LUT$Full_Zone_Code))
+
+
+
+```
+
+
+```{r}
+
+
+
+
+
+save(nCLIMDIV,nCLIMDIV_Metadata,
+     file = "~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata")
+
+system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata wjc@kyrill:/projects/THREDDS/local_academic_repo/CLASS_Examples/")
+
+```
+
