@@ -86,11 +86,11 @@ nCLIMDIV_Metadata = tibble(Variable  = c("tmax",
                                     NA),  #  "zndx"
                    )
 
-root_url = "ftp://ftp.ncdc.noaa.gov/pub/data/cirs/climdiv/"
+root_url = "https://www.ncei.noaa.gov/pub/data/cirs/climdiv/"
 
 version = "v1.0.0"
 
-datecode = read_lines(file = url(description = "ftp://ftp.ncdc.noaa.gov/pub/data/cirs/climdiv/procdate.txt"))
+datecode = read_lines(file = url(description = "https://www.ncei.noaa.gov/pub/data/cirs/climdiv/procdate.txt"))
 
 
 nCLIMDIV_Metadata$nCLIMDIV_Version      = version
@@ -140,8 +140,8 @@ for (var in nCLIMDIV_Metadata$Variable) {
   
   print(url_string)
   
-  input_table = read_delim(file      = url(description = url_string),
-                           delim     = " ",
+  input_table = read_table(file      = url(description = url_string),
+                           #delim     = " ",
                            col_names = column_names,
                            col_types = col_types)
   
@@ -277,12 +277,15 @@ nCLIMDIV$Full_Zone_Code = factor(nCLIMDIV$Full_Zone_Code, levels=unique(nCLIMDIV
 
 
 
+write_csv(nCLIMDIV,
+     file = "~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.csv")
 
-
-save(nCLIMDIV,nCLIMDIV_Metadata,
+save(nCLIMDIV,nCLIMDIV_Metadata,nCLIMDIV_LUT,
      file = "~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata")
 
 system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata wjc@kyrill:/projects/THREDDS/local_academic_repo/CLASS_Examples/")
+system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.csv wjc@kyrill:/projects/THREDDS/local_academic_repo/CLASS_Examples/")
+
 
 ```
 

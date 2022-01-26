@@ -15,7 +15,7 @@ library("dplyr")
 library("rlist")
 library("readxl")
 library("tidyverse")
-
+library("tidycensus")
 
 
 
@@ -27,6 +27,7 @@ library("tidyverse")
 #                     CA->FIPS:06
 #                     WI->FIPS:55
 #                     PA->FIPS:42
+#                     NM->FIPS:35
 #                     NAMIBIA->FIPS:WA 
 #                     Mongolia->FIPS:MG 
 #                     CHEYENNE->HUC:101202 &
@@ -37,15 +38,22 @@ library("tidyverse")
 #                     Buncombe->FIPS:37021
 #                     Onslow->FIPS:37133
 
-ncdc_ids = ncdc_stations(locationid = 'HUC:1014',
+ncdc_ids = ncdc_stations(locationid = 'FIPS:AS',
                          datasetid  = 'GHCND',
+                         extent = c(-89.,117,89,118),
                          limit      = 1000)
 
 
+target_data_directory_root = "./GHCN_DATA/AUS/"
+dir.create(path = str_c(target_data_directory_root,"netCDF", sep=""),
+           recursive = TRUE)
+dir.create(path = str_c(target_data_directory_root,"RData", sep=""),
+           recursive = TRUE)
 
 
 
-rdata_bigfile_name = "GHCND-GLOBAL__SLAVBARD__"
+
+rdata_bigfile_name = "GHCND-GLOBAL_"
 
 n_stations = ncdc_ids$meta$pageCount
 
@@ -57,9 +65,15 @@ print(ncdc_ids)
 
 ghcn_station_information = ncdc_ids
 
-ghcn_station_information = ghcn_station_information %>% filter(latitude > 73.)
+
 
 total_number_of_stations = length(ncdc_ids$name)
+
+if (total_number_of_stations == 1000) {
+  print("too many files")
+  stop()
+  
+}
 
 print("")
 print(" Begin Looping")
@@ -76,7 +90,6 @@ indexlist = 1:total_number_of_stations
 
 for (ncdc_index in 1:total_number_of_stations ) { 
   
-  print( str_c (ncdc_index, ncdc_ids$name[ncdc_index], sep = " ") )
 
   station_name_label     = ncdc_ids$name[ncdc_index]
   station_latitude       = ncdc_ids$latitude[ncdc_index]
@@ -116,7 +129,13 @@ for (ncdc_index in 1:total_number_of_stations ) {
 
   remove(ncdc_data)
 
-
+  print("--------------------------")
+  print(paste("Station # ",
+              ncdc_index,
+              " of ",
+              total_number_of_stations,
+              sep = ""))
+  print(filename_station_label)
 
    ghcn_station = data.frame(  station_name           = as.character(ncdc_ids$name[ncdc_index]),
                                station_latitude       = ncdc_ids$latitude[ncdc_index],
@@ -386,9 +405,7 @@ for (ncdc_index in 1:total_number_of_stations ) {
   remove(sorted_data)
   remove(ordered)
 
-  print("   starting netcdf")
-  
-   print(ncdc_index)
+
 
   if (ncdc_index == 1) {
     ghcn_stations = ghcn_station
@@ -401,7 +418,9 @@ for (ncdc_index in 1:total_number_of_stations ) {
   
   
   save(gchn_station = ghcn_station,
-       file = paste(file_title_string,
+       file = paste(target_data_directory_root,
+                    "RData/",
+                    file_title_string,
                     ".Rdata",
                     sep=""))
   
@@ -827,12 +846,12 @@ for (ncdc_index in 1:total_number_of_stations ) {
     targ_time_series_raw$Mean_Wind_From_Direction   = awdr
 
 
-  output_file_name = paste(file_title_string,
-                           ".csv",
-                           sep="")
+#  output_file_name = paste(file_title_string,
+#                           ".csv",
+#                           sep="")
 
-  write.csv(x    = targ_time_series_raw,
-            file = output_file_name,
+#  write.csv(x    = targ_time_series_raw,
+#            file = output_file_name,
             row.names = FALSE)
 
 
@@ -842,7 +861,9 @@ for (ncdc_index in 1:total_number_of_stations ) {
 
 
 
-  netcdf_output_file_name = paste(file_title_string,
+  netcdf_output_file_name = paste(target_data_directory_root,
+                                  "netCDF/",
+                                  file_title_string,
                                   ".nc",
                                   sep="")
 
@@ -1023,7 +1044,7 @@ for (ncdc_index in 1:total_number_of_stations ) {
   }
 
 
-  if ("AWNDR" %in% available_datafields) {
+  if ("AWDR" %in% available_datafields) {
     netcdf_awdr = ncvar_def(nam      = "mean_wind_from_direction",
                             units    = "degrees_from",
                             dim      = netcdf_time_dim,
@@ -1744,7 +1765,7 @@ ncatt_put(nc         = nc_ghcn,
   if ("AWDR" %in% available_datafields) {
     ncvar_put(nc      = nc_ghcn,
               varid   = netcdf_awdr,
-              vals    = awnd,
+              vals    = awdr,
               verbose = FALSE )
     remove(netcdf_awdr,
            awdr)
@@ -1755,13 +1776,7 @@ ncatt_put(nc         = nc_ghcn,
   remove(nc_ghcn,
          netcdf_time_dim)
 
-  print("--------------------------")
-  print(paste("Station # ",
-              ncdc_index,
-              " of ",
-              total_number_of_stations,
-              sep = ""))
-  print(filename_station_label)
+
 
 
 
@@ -1785,18 +1800,4 @@ ncatt_put(nc         = nc_ghcn,
   
 }
 
-if (1 < 0) {
-ghcn_stations$station_name = as.factor(ghcn_stations$station_name)
-ghcn_stations$ncdc_id_code = as.factor(ghcn_stations$ncdc_id_code)
 
-colnames(ghcn_station_information)[7] = "ncdc_id_code"
-save(gchn_stations = ghcn_stations,
-     ghcn_station_information = ghcn_station_information,
-     ghcn_metadata = ghcn_metadata,file = paste(rdata_bigfile_name,
-                  min(ghcn_stations$time),
-                  "--",
-                  max(ghcn_stations$time),
-                  ".Rdata",
-                  sep=""))
-
-}

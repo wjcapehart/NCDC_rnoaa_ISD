@@ -1,0 +1,18 @@
+Variable,param_code,long_name,units,nCLIMDIV_Version,nCLIMDIV_Release_Date
+TMAX,27,Maximum Monthly Temperature,deg C,v1.0.0,2021-04-06
+TMIN,28,Minimim Monthly Temperature,deg C,v1.0.0,2021-04-06
+TMPC,2,Mean Monthly Temperature,deg C,v1.0.0,2021-04-06
+CDDC,26,Cooling Degree Days,NA,v1.0.0,2021-04-06
+HDDC,25,Heating Degree Days,NA,v1.0.0,2021-04-06
+PCPN,1,Monthly Total Precipitation,kg m-2,v1.0.0,2021-04-06
+PDSI,5,Palmer Drought Severity Index,NA,v1.0.0,2021-04-06
+PHDI,6,Palmer Hydrological Drought Index,NA,v1.0.0,2021-04-06
+PMDI,8,Modified Palmer Drought Severity Index,NA,v1.0.0,2021-04-06
+SP01,71,Modified Palmer Drought Severity Index,NA,v1.0.0,2021-04-06
+SP02,72,2-mo Standardized Precipitation Index,NA,v1.0.0,2021-04-06
+SP03,73,3-mo Standardized Precipitation Index,NA,v1.0.0,2021-04-06
+SP06,74,6-mo Standardized Precipitation Index,NA,v1.0.0,2021-04-06
+SP09,75,9-mo Standardized Precipitation Index,NA,v1.0.0,2021-04-06
+SP12,76,12-mo Standardized Precipitation Index,NA,v1.0.0,2021-04-06
+SP24,77,24-mo Standardized Precipitation Index,NA,v1.0.0,2021-04-06
+ZNDX,7,"Palmer ""Z"" Index",NA,v1.0.0,2021-04-06
