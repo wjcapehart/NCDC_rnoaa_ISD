@@ -39,8 +39,8 @@ ghcn_metadata = read_excel(path = "~/GitHub/NCDC_rnoaa_ISD/GHCN_Metadata.xlsx")
 #                     Buncombe->FIPS:37021
 #                     Onslow->FIPS:37133
 
-target_data_directory_root = "/Users/wjc/GitHub/NCDC_rnoaa_ISD/GHCN_DATA/USA/AK/"
-target_fipcode = "02"
+target_data_directory_root = "/Users/wjc/GitHub/NCDC_rnoaa_ISD/GHCN_DATA/USA/PA/"
+target_fipcode = "42"
 ncdc_ids = ncdc_stations(locationid = str_c("FIPS:",target_fipcode, sep=""),
                          datasetid  = 'GHCND',
                          limit      = 1000)
@@ -665,7 +665,7 @@ for (this_fip in fips_codes$state_county_code)
     
     
     
-    
+      if (1 < 0) {    
     
       if ("TMAX" %in% available_datafields)  {
         plot(x       = Date,
@@ -841,7 +841,7 @@ for (this_fip in fips_codes$state_county_code)
              xlab    = "Date",
              ylab    = "Average Wind Speed (m s-1)",
              main    = station_name_label)
-      }
+      }}
     
     
     

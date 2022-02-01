@@ -40,9 +40,11 @@ library("tidycensus")
 
 ncdc_ids = ncdc_stations(locationid = 'FIPS:AS',
                          datasetid  = 'GHCND',
-                         extent = c(-89.,117,89,118),
+                         extent = c(-89, 138, 89, 139),
                          limit      = 1000)
 
+#extent = c(-89.,119,89,120),
+#extent = c(50,11,51,12),
 
 target_data_directory_root = "./GHCN_DATA/AUS/"
 dir.create(path = str_c(target_data_directory_root,"netCDF", sep=""),
@@ -629,7 +631,7 @@ for (ncdc_index in 1:total_number_of_stations ) {
 
 
 
-
+if (1 < 0) {
 
   if ("TMAX" %in% available_datafields)  {
     plot(x       = Date,
@@ -806,6 +808,8 @@ for (ncdc_index in 1:total_number_of_stations ) {
          ylab    = "Average Wind Speed (m s-1)",
          main    = station_name_label)
   }
+  
+}
 
 
 
@@ -852,7 +856,7 @@ for (ncdc_index in 1:total_number_of_stations ) {
 
 #  write.csv(x    = targ_time_series_raw,
 #            file = output_file_name,
-            row.names = FALSE)
+#            row.names = FALSE)
 
 
   remove(targ_time_series_raw)
