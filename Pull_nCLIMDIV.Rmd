@@ -283,8 +283,8 @@ write_csv(nCLIMDIV,
 save(nCLIMDIV,nCLIMDIV_Metadata,nCLIMDIV_LUT,
      file = "~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata")
 
-system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata wjc@kyrill:/projects/THREDDS/local_academic_repo/CLASS_Examples/")
-system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.csv wjc@kyrill:/projects/THREDDS/local_academic_repo/CLASS_Examples/")
+system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.Rdata wjc@kyrill:/data/DATASETS/local_academic_repo/CLASS_Examples/")
+system(command = "scp ~/GitHub/NCDC_rnoaa_ISD/nCLIMDIV.csv wjc@kyrill:/data/DATASETS/local_academic_repo/CLASS_Examples/")
 
 
 ```

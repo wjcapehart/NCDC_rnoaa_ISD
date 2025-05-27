@@ -11,11 +11,11 @@ library("isdparser")
 library("lubridate")
 library("ncdf4")
 library("dplyr")
-# library("openair")
+library("openair")
 library("rlist")
 library("readxl")
 library("tidyverse")
-library("tidycensus")
+#library("tidycensus")
 
 
 
@@ -25,6 +25,7 @@ library("tidycensus")
 #                     AK->FIPS:02
 #                     NC->FIPS:37
 #                     CA->FIPS:06
+#                     MA->FIPS:25
 #                     WI->FIPS:55
 #                     PA->FIPS:42
 #                     NM->FIPS:35
@@ -38,15 +39,15 @@ library("tidycensus")
 #                     Buncombe->FIPS:37021
 #                     Onslow->FIPS:37133
 
-ncdc_ids = ncdc_stations(locationid = 'FIPS:AS',
+target_data_directory_root = "./GHCN_DATA/USA/ND/"
+
+ncdc_ids = ncdc_stations(locationid =  'FIPS:06',
                          datasetid  = 'GHCND',
-                         extent = c(-89, 138, 89, 139),
                          limit      = 1000)
-
 #extent = c(-89.,119,89,120),
-#extent = c(50,11,51,12),
+#extent = c(50,11,51,12),     # 99.6196 101.3118   -99.7, 89, -99.5, c(-37.5, 141, -28.16, 154),
 
-target_data_directory_root = "./GHCN_DATA/AUS/"
+
 dir.create(path = str_c(target_data_directory_root,"netCDF", sep=""),
            recursive = TRUE)
 dir.create(path = str_c(target_data_directory_root,"RData", sep=""),

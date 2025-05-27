@@ -180,9 +180,9 @@ The procedure is summarized as follows
     
     thorntwaite_inputs = data_frame(year   = year(single_zone$Date),
                                     month  = month(single_zone$Date),
-                                    P      = single_zone$PCPN *  25.4,  
-                                    Tn     = (single_zone$TMIN - 32) * 5./9,  
-                                    Tx     = (single_zone$TMAX - 32) * 5./9) #,
+                                    P      = single_zone$PCPN,  
+                                    Tn     = (single_zone$TMIN,  
+                                    Tx     = (single_zone$TMAX) #,
                                  # Tm     = (single_zone$TMPC - 32) * 5./9)
     
   }
@@ -440,7 +440,6 @@ ggplot(data = subset_lines) +
 
 
 ```
-
 
 
 

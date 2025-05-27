@@ -1,0 +1,46 @@
+,variable_name,long_name,standard_name,units,scale,offset,cell_methods
+TMAX,maximum_air_temperature,2-m Maximum Daily Air Temperature,air_temperature,degC,0.1,0.0,time:maximum
+TMIN,minimum_air_temperature,2-m Minimium Daily Air Temperature,air_temperature,degC,0.1,0.0,time:minimum
+TAVG,mean_air_temperature,2-m Mean Daily Air Temperature,air_temperature,degC,0.1,0.0,time:mean
+PRCP,precipitation_amount,Daily Total Precipitation,precipitation_amount,kg m-2,0.1,0.0,time:sum
+SNOW,thickness_of_snowfall_amount,Daily Total Snowfall,thickness_of_snowfall_amount,m,0.001,0.0,time:sum
+SNWD,surface_snow_thickness,Snow Depth on Surface,surface_snow_thickness,m,0.001,0.0,time:point
+WESD,liquid_water_content_of_surface_snow,Liquid Snow Water Equivalent Depth on Surface,liquid_water_content_of_surface_snow,kg m-2,0.1,0.0,time:point
+WESF,liquid_water_equivalent_snowfall_amount,Liquid Snowfall Water Equivalent Depth on Surface,liquid_water_equivalent_snowfall_amount,kg m-2,0.1,0.0,time:sum
+AWND,mean_wind_speed,Mean Daily Wind Speed,mean_wind_speed,m s-1,0.1,0.0,time:mean
+AWDR,mean_wind_from_direction,Mean Daily Wind Origin Direction,mean_wind_from_direction,degrees_from,1.0,0.0,time:mean
+WT01,weather_event_fog,"WX: Fog, Ice Fog, or Freezing Fog",,,1.0,0.0,time:point
+WT02,weather_event_heavy_fog,WX: Heavy Fog or Heavy Freezing Fog,,,1.0,0.0,time:point
+WT03,weather_event_thunder,WX: Thunder,,,1.0,0.0,time:point
+WT04,weather_event_ice_pellets,"WX: Ice Pellets, Sleet, Snow Pellets, or Small Hail",,,1.0,0.0,time:point
+WT05,weather_event_hail,WX: Hail,,,1.0,0.0,time:point
+WT06,weather_event_rime,WX: Glaze or Rime ,,,1.0,0.0,time:point
+WT07,weather_event_dist,"WX: Dust, Volcanic Ash, Blowing Dust, Blowing Sand, or Blowing Obstruction",,,1.0,0.0,time:point
+WT08,weather_event_smoke,WX: Smoke or Haze,,,1.0,0.0,time:point
+WT09,weather_event_blowing_snow,WX: Blowing or Drifting Snow,,,1.0,0.0,time:point
+WT10,weather_event_tornado,"WX: Tornado, Waterspout, or Funnel Cloud",,,1.0,0.0,time:point
+WT11,weather_event_high_wind,WX: High or Damaging winds,,,1.0,0.0,time:point
+WT12,weather_event_blowing_spray,WX: Blowing Spray,,,1.0,0.0,time:point
+WT13,weather_event_mist,WX: Mist,,,1.0,0.0,time:point
+WT14,weather_event_drizzle,WX: Drizzle,,,1.0,0.0,time:point
+WT15,weather_event_freezing_drizzle,WX: Freezing Drizzle,,,1.0,0.0,time:point
+WT16,weather_event_rain,WX: Rain,,,1.0,0.0,time:point
+WT17,weather_event_freezing_rain,WX: Freezing Rain,,,1.0,0.0,time:point
+WT18,weather_event_snow,"WX: Snow, Snow pellets, Snow grains, or Ice Crystals",,,1.0,0.0,time:point
+WT19,weather_event_unknown_precip,WX: Unknown Source of Precipitation,,,1.0,0.0,time:point
+WT21,weather_event_ground_fog,WX: Ground Fog,,,1.0,0.0,time:point
+WT22,weather_event_ice_fog,WX: Ice Fog or Freezing Fog,,,1.0,0.0,time:point
+ADPT,dew_point_temperature,2-m Average Daily Dew Point Temperature,dew_point_temperature,degC,0.1,0.0,time:mean
+ASLP,air_pressure_at_sea_level,Mean Daily Pressure Reduced to Mean Sea Level,air_pressure_at_sea_level,degC,0.1,0.0,time:mean
+ASTP,surface_air_pressure,Mean Daily Surface Pressure,surface_air_pressure,degC,0.1,0.0,time:mean
+AWBT,wet_bulb_temperature,2-m Average Daily Wet Bulb Temperature,wet_bulb_temperature,degC,0.1,0.0,time:mean
+EVAP,water_potential_evaporation_amount,Total Daily Measured Pan Evaporation,water_potential_evaporation_amount,kg m-2,0.1,0.0,time:sum
+PSUN,percent_of_possible_sunshine,Percent of Potential Sunshine,,percent,1.0,0.0,time:sum
+RHAV,mean_relative_humidity,2-m Average Daily Relative Humidity,relative_humidity,percent,1.0,0.0,time:mean
+RHMN,min_relative_humidity,2-m Minimum Daily Relative Humidity,relative_humidity,percent,1.0,0.0,time:minimum
+RHMX,max_relative_humidity,2-m Maximum Daily Relative Humidity,relative_humidity,percent,1.0,0.0,time:maximum
+TAXN,mean_estimated_air_temperature,2-m Mean Calculated Daily Air Temperature,air_temperature,degC,0.1,0.0,time:mean
+TSUN,duration_of_sunshine,Duration of Sunshine,duration_of_sunshine,minutes,1.0,0.0,time:sum
+WSFG,wind_speed_of_gust,wind_speed_of_gust,wind_speed_of_gust,m s-1,0.1,0.0,time:maximum
+WSF1,maximum_1_minute_wind_speed,wind_speed,wind_speed,m s-1,0.1,0.0,time:maximum
+WSF2,maximum_2_minute_wind_speed,wind_speed,wind_speed,m s-1,0.1,0.0,time:maximum

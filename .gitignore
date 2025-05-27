@@ -6,3 +6,5 @@ Rplots.pdf
 GHCN_DATA/
 nCLIMDIV.Rdata
 nCLIMDIV.csv
+*.nc
+*.png

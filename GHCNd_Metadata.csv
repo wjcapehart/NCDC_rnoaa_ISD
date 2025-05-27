@@ -1,0 +1,80 @@
+index,variable_name,long_name,standard_name,units,scale,offset,cell_methods
+ACMC,mean_midnight_to_midnight_mean_cloudiness_automated,Average cloudiness midnight to midnight from 30-second ceilometer data,cloud_area_fraction,percent,1,0,time:mean
+ACMH,mean_midnight_to_midnight_mean_cloudiness_manual,Average cloudiness midnight to midnight from manual observations,cloud_area_fraction,percent,1,0,time:mean
+ACSC,mean_sunrise_to_sunset_mean_cloudiness_automated,Average cloudiness sunrise to sunset from 30-second ceilometer data,cloud_area_fraction,percent,1,0,time:mean
+ACSH,mean_sunrise_to_sunset_mean_cloudiness_manual,Average cloudiness sunrise to sunset from manual observations,cloud_area_fraction,percent,1,0,time:mean
+ADPT,dew_point_temperature,2-m Average Daily Dew Point Temperature,dew_point_temperature,degC,0.1,0,time:mean
+ASLP,air_pressure_at_sea_level,Mean Daily Pressure Reduced to Mean Sea Level,air_pressure_at_sea_level,degC,0.1,0,time:mean
+ASTP,surface_air_pressure,Mean Daily Surface Pressure,surface_air_pressure,degC,0.1,0,time:mean
+AWBT,wet_bulb_temperature,2-m Average Daily Wet Bulb Temperature,wet_bulb_temperature,degC,0.1,0,time:mean
+AWDR,mean_wind_from_direction,Mean Daily Wind Origin Direction,wind_from_direction,degrees_from,1,0,time:mean
+AWND,mean_wind_speed,Mean Daily Wind Speed,wind_speed,m s-1,0.1,0,time:mean
+DAEV,length_mutiday_water_potential_evaporation_amount,Number of days included in the multiday evaporation total,,days,1,0,time:sum
+DAPR,length_multiday_precipitation_amount,Number of days included in the multiday precipiation total,,days,1,0,time:sum
+DASF,length_multiday_thickness_of_snowfall_amount,Number of days included in the multiday snowfall total,,days,1,0,time:sum
+DATN,length_multiday_minimum_air_temperature,Number of days included in the multiday minimum temperature ,,days,1,0,time:sum
+DATX,length_multiday_maximum_air_temperature,Number of days included in the multiday maximum temperature ,,days,1,0,time:sum
+DAWM,length_multiday_wind_movement,Number of days included in the multiday wind movement,,days,1,0,time:sum
+DWPR,length_days_with_non_zero_preciputation_in_multiday_precip_report,Number of days with non-zero precipitation included in multiday precipitation total,,days,1,0,time:sum
+EVAP,water_potential_evaporation_amount,Total Daily Measured Pan Evaporation,water_potential_evaporation_amount,kg m-2,0.1,0,time:sum
+FMTM,time_of_fastest_mile_or_one_minute_wind,Time of fastest mile or fastest 1-minute wind,,,,,time:maximum
+FRGB,depth_at_base_of_frozen_ground,Base of frozen ground layer,,cm,1,0,time:point
+FRGT,depth_at_base_of_unfrozen_ground,Top of frozen ground layer,depth_at_base_of_unfrozen_ground,cm,1,0,time:point
+FRTH,thickness_of_frozen_ground,Thickness of frozen ground layer,,cm,1,0,time:point
+GAHT,river_and_gage_height_difference,Difference between river and gauge height,,cm,1,0,time:point
+MDEV,mutiday_water_potential_evaporation_amount,Multiday evaporation total,water_potential_evaporation_amount,kg m-2,0.1,0,time:sum
+MDPR,multiday_precipitation_amount,Multiday precipitation total,precipitation_amount,kg m-2,0.1,0,time:sum
+MDSF,multiday_thickness_of_snowfall_amount,Multiday snowfall total,thickness_of_snowfall_amount,m,0.001,0,time:sum
+MDTN,multiday_minimum_air_temperature,Multiday minimum temperature,air_temperature,degC,0.1,0,time:minimum
+MDTX,multiday_maximum_air_temperature,Multiday maximum  temperature,air_temperature,degC,0.1,0,time:maximum
+MDWM,multiday_wind_movement,Multiday wind movement,,km,1,0,time:sum
+MNPN,minumum_water_temperature_in_evap_pan,Daily minimum temperature of water in an evaporation pan,,degC,0.1,0,time:minimum
+MXPN,maximum_water_temperature_in_evap_pan,Daily maximum temperature of water in an evaporation pan,,degC,0.1,0,time:maximum
+PGTM,time_of_peak_guest,Peak gust time,,,,,time:maximum
+PRCP,precipitation_amount,Daily Total Precipitation,precipitation_amount,kg m-2,0.1,0,time:sum
+PSUN,percent_of_possible_sunshine,Percent of Potential Sunshine,,percent,1,0,time:sum
+RHAV,mean_relative_humidity,2-m Average Daily Relative Humidity,relative_humidity,percent,1,0,time:mean
+RHMN,min_relative_humidity,2-m Minimum Daily Relative Humidity,relative_humidity,percent,1,0,time:minimum
+RHMX,max_relative_humidity,2-m Maximum Daily Relative Humidity,relative_humidity,percent,1,0,time:maximum
+SNOW,thickness_of_snowfall_amount,Daily Total Snowfall,thickness_of_snowfall_amount,m,0.001,0,time:sum
+SNWD,surface_snow_thickness,Snow Depth on Surface,surface_snow_thickness,m,0.001,0,time:point
+TAVG,mean_air_temperature,2-m Mean Daily Air Temperature,air_temperature,degC,0.1,0,time:mean
+TAXN,mean_estimated_air_temperature,2-m Mean Calculated Daily Air Temperature,air_temperature,degC,0.1,0,time:mean
+TMAX,maximum_air_temperature,2-m Maximum Daily Air Temperature,air_temperature,degC,0.1,0,time:maximum
+TMIN,minimum_air_temperature,2-m Minimium Daily Air Temperature,air_temperature,degC,0.1,0,time:minimum
+TOBS,air_temperature_at_observation_time,Air Temperature at Observation Time,air_temperature,degC,0.1,0,time:minimum
+TSUN,duration_of_sunshine,Duration of Sunshine,duration_of_sunshine,minutes,1,0,time:sum
+WESD,liquid_water_content_of_surface_snow,Liquid Snow Water Equivalent Depth on Surface,liquid_water_content_of_surface_snow,kg m-2,0.1,0,time:point
+WESF,liquid_water_equivalent_snowfall_amount,Liquid Snowfall Water Equivalent Depth on Surface,liquid_water_equivalent_snowfall_amount,kg m-2,0.1,0,time:sum
+WSF1,maximum_1_minute_wind_speed,Maximum 1-minute wind speed,wind_speed,m s-1,0.1,0,time:maximum
+WSF2,maximum_2_minute_wind_speed,Maximum 2-minute wind speed,wind_speed,m s-1,0.1,0,time:maximum
+WSF5,maximum_5_minute_wind_speed,Maximum 5-minute wind speed,wind_speed,m s-1,0.1,0,time:maximum
+WSFG,wind_speed_of_gust,Wind Gust Speed,wind_speed_of_gust,m s-1,0.1,0,time:maximum
+WSFI,wind_speed_highest_instantaneous,Maximum Instantaneous Wind Speed,wind_speed,m s-1,0.1,0,time:maximum
+WSFM,maximum_mile_windspeed,Maximum 1-mile Wind Speed,wind_speed,m s-1,0.1,0,time:maximum
+WT01,weather_event_fog,"WX: Fog, Ice Fog, or Freezing Fog",,,1,0,time:point
+WT02,weather_event_heavy_fog,WX: Heavy Fog or Heavy Freezing Fog,,,1,0,time:point
+WT03,weather_event_thunder,WX: Thunder,,,1,0,time:point
+WT04,weather_event_ice_pellets,"WX: Ice Pellets, Sleet, Snow Pellets, or Small Hail",,,1,0,time:point
+WT05,weather_event_hail,WX: Hail,,,1,0,time:point
+WT06,weather_event_rime,WX: Glaze or Rime ,,,1,0,time:point
+WT07,weather_event_dust,"WX: Dust, Volcanic Ash, Blowing Dust, Blowing Sand, or Blowing Obstruction",,,1,0,time:point
+WT08,weather_event_smoke,WX: Smoke or Haze,,,1,0,time:point
+WT09,weather_event_blowing_snow,WX: Blowing or Drifting Snow,,,1,0,time:point
+WT10,weather_event_tornado,"WX: Tornado, Waterspout, or Funnel Cloud",,,1,0,time:point
+WT11,weather_event_high_wind,WX: High or Damaging winds,,,1,0,time:point
+WT12,weather_event_blowing_spray,WX: Blowing Spray,,,1,0,time:point
+WT13,weather_event_mist,WX: Mist,,,1,0,time:point
+WT14,weather_event_drizzle,WX: Drizzle,,,1,0,time:point
+WT15,weather_event_freezing_drizzle,WX: Freezing Drizzle,,,1,0,time:point
+WT16,weather_event_rain,WX: Rain,,,1,0,time:point
+WT17,weather_event_freezing_rain,WX: Freezing Rain,,,1,0,time:point
+WT18,weather_event_snow,"WX: Snow, Snow pellets, Snow grains, or Ice Crystals",,,1,0,time:point
+WT19,weather_event_unknown_precip,WX: Unknown Source of Precipitation,,,1,0,time:point
+WT21,weather_event_ground_fog,WX: Ground Fog,,,1,0,time:point
+WT22,weather_event_ice_fog,WX: Ice Fog or Freezing Fog,,,1,0,time:point
+WV01,near_weather_event_fog,"Near WX: Fog, Ice Fog, or Freezing Fog",,,1,0,time:point
+WV03,near_weather_event_thunder,Near WX: Thunder,,,1,0,time:point
+WV07,near_weather_event_dust,"Near WX: Dust, Ash, Blowing Dust, Blowing Sand, or Blowing Obstruction",,,1,0,time:point
+WV18,near_weather_event_snow_or_ice_crystals,"Near WX: Snow, or Ice Crystals",,,1,0,time:point
+WV20,near_weather_event_rain_or_snow_shower,Near WX: Rain or Snow Shower,,,1,0,time:point

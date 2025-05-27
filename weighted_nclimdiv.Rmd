@@ -1,0 +1,228 @@
+---
+title: "HUC_Weight_Climate_Zone"
+author: "Bill Capehart"
+date: "2023-09-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+
+# Libraries
+
+  # Tidyverse resour(ces
+
+  library(package = "tidyverse") # Multiple Tidyverse Resources
+  library(package = "lubridate") # Date-Time Control
+
+  # Other Packages
+
+  library(package = "ClimClass") # 
+
+
+```
+
+
+
+```{r}
+# Pull nCLIMDIV Data from SD Mines Data Server
+
+load(file = url(description = "http://kyrill.ias.sdsmt.edu:8080/thredds/fileServer/CLASS_Examples/nCLIMDIV.Rdata"))
+
+zones = c("3905","3906")
+areas = c(2888106159.606916904449463, 
+          5337889301.682541847229004)
+
+weight0 = areas/sum(areas)
+
+
+nCLIMDIV2 = nCLIMDIV %>% 
+  filter((Full_Zone_Code == "3905") | ((Full_Zone_Code == "3906"))) %>%
+  mutate(weight = ifelse((Full_Zone_Code == "3905"),
+                         weight0[1], weight0[2])) %>% select(-c("State_Name",
+                                                                "Zone_Name"))
+
+nCLIMDIV3 = pivot_longer(nCLIMDIV2,
+                         cols = 3:21,
+                         names_to = "variables",
+                         values_to = "values") %>%
+  group_by(Date,variables) %>%
+  summarize(values = sum(values*weight)) %>%
+  ungroup() 
+
+
+nCLIMDIV3 = pivot_wider(data = nCLIMDIV3,
+                        names_from = "variables",
+                        values_from = "values") 
+
+nCLIMDIV3$Full_Zone_Code = "Bad River"
+
+write_excel_csv(nCLIMDIV3, file = "./CLIMDIV_out.csv")
+
+nCLIMDIV2 = rbind(nCLIMDIV3,nCLIMDIV2 %>% select(-c(weight)))
+```
+
+
+```{r}
+ggplot(data = nCLIMDIV2 %>% group_by(Year = year(Date), Full_Zone_Code) %>% summarize(TMPC = mean(TMPC)) %>% ungroup() ) +
+  aes(x = Year, y=TMPC, color=Full_Zone_Code) +
+  geom_line()
+```
+
+
+```{r}
+    thorntwaite_inputs = data_frame(year   = year(nCLIMDIV3$Date),
+                                    month  = month(nCLIMDIV3$Date),
+                                    P      = nCLIMDIV3$PCPN ,  
+                                    Tn     = nCLIMDIV3$TMIN,  
+                                    Tx     =  nCLIMDIV3$TMAX, #,
+                                    Tm     =  nCLIMDIV3$TMPC)
+  
+  soil_zone_capacity = 150 # soil reservoir storage capacity in mm
+  initial_snow_cover =   0 # snow reservoir storage capacity in mm
+
+    thorntwaite_budget_raw = thornthwaite(series          = thorntwaite_inputs, 
+                                          latitude        = nCLIMDIV3$Center_Lat[1], 
+                                          clim_norm       = NULL, 
+                                          first.yr        = min(thorntwaite_inputs$year), 
+                                          last.yr         = 2022, 
+                                          quant           = c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1), 
+                                          snow.init       = initial_snow_cover, 
+                                          Tsnow           = -1, 
+                                          TAW             = soil_zone_capacity, 
+                                          fr.sn.acc       = 0.95, 
+                                          snow_melt_coeff = 1)
+    
+    {
+
+    # Precipitation
+      water_budget = t( as_tibble(thorntwaite_budget_raw$W_balance$Precipitation) )
+      colnames(water_budget) = str_c(1:12)
+      water_budget = water_budget %>%
+        as.data.frame %>% 
+        rownames_to_column(.,
+                           var = 'year')
+      water_budget$Variable = "Precipitation"
+      
+    #Et0
+      raw_wb2 = t( as_tibble(thorntwaite_budget_raw$W_balance$Et0) )
+      colnames(raw_wb2) = str_c(1:12)
+      raw_wb2 = raw_wb2 %>%
+        as.data.frame %>% 
+        rownames_to_column(.,
+                           var = 'year')
+      raw_wb2$Variable = "Potential_Evap"
+      
+      water_budget = rbind(water_budget,raw_wb2)
+      remove(raw_wb2)
+      
+    #Storage
+      raw_wb2           = t( as_tibble(thorntwaite_budget_raw$W_balance$Storage) )
+      colnames(raw_wb2) = str_c(1:12)
+      raw_wb2 = raw_wb2 %>%
+        as.data.frame %>% 
+        rownames_to_column(.,
+                           var = 'year')
+      raw_wb2$Variable = "Storage"
+      
+      water_budget = rbind(water_budget,raw_wb2)  
+      remove(raw_wb2)
+    
+    #'Prec. - PotEvap.'
+      raw_wb2 = t( as_tibble(thorntwaite_budget_raw$W_balance$'Prec. - Evap.') )
+      colnames(raw_wb2) = str_c(1:12)
+      raw_wb2 = raw_wb2 %>%
+        as.data.frame %>% 
+        rownames_to_column(.,
+                           var = 'year')
+      raw_wb2$Variable = "Prec_m_PE"
+      
+      water_budget = rbind(water_budget,raw_wb2)  
+      remove(raw_wb2)
+      
+    #Deficit
+      raw_wb2 = t( as_tibble(thorntwaite_budget_raw$W_balance$Deficit) )
+      colnames(raw_wb2) = str_c(1:12)
+      raw_wb2 = raw_wb2 %>%
+        as.data.frame %>% 
+        rownames_to_column(.,
+                           var = 'year')
+      raw_wb2$Variable = "Deficit"
+      
+      water_budget = rbind(water_budget,raw_wb2)
+      remove(raw_wb2)
+      
+    #Surplus
+      raw_wb2 = t( as_tibble(thorntwaite_budget_raw$W_balance$Surplus) )
+      colnames(raw_wb2) = str_c(1:12)
+      raw_wb2 = raw_wb2 %>%
+        as.data.frame %>% 
+        rownames_to_column(.,
+                           var = 'year')
+      raw_wb2$Variable = "Surplus"
+      
+      water_budget = rbind(water_budget, raw_wb2)
+      remove(raw_wb2)
+
+    water_budget = gather(data  = water_budget,
+                          key   = month,
+                          value = "value",
+                          str_c(1:12))
+      
+    water_budget$Date = as.Date(str_c(water_budget$year,
+                                      "-",
+                                      water_budget$month,
+                                      "-15",
+                                      sep = ""))
+    
+    water_budget = spread(data = water_budget,
+                          key  = "Variable",
+                          value = "value")
+    
+    water_budget = water_budget %>% arrange(Date)
+    
+  }
+
+  # finish the budget by critical parameters
+  {  
+  
+    # calculate evapotransporation
+    water_budget = water_budget %>% 
+                      mutate(Evaporation = Potential_Evap - Deficit)
+    
+    # calculate precipitation - true evaporation
+    water_budget = water_budget %>% 
+                      mutate(Prec_m_Evap = Precipitation - Evaporation)
+
+    # calculate recharge by calculating the increase in soil storage from rainfall
+    water_budget = water_budget %>% 
+                      mutate(Recharge = c(NA, diff(x = Storage, 
+                                                   lag = 1))) %>% 
+                      mutate(Recharge = ifelse(test = Recharge>0, 
+                                               yes  = Recharge, 
+                                               no   = 0))
+  
+    # separate recharge from surplus in teh water budget
+    water_budget = water_budget %>% 
+                      mutate(Surplus = Surplus - Recharge)  %>% 
+                      mutate(Surplus = ifelse(test = Surplus>0, 
+                                              yes = Surplus, 
+                                              no  = 0))
+  
+    # calculate recharge by calculating the increase in soil storage from rainfall
+    water_budget = water_budget %>% 
+                      mutate(Snowpack = Prec_m_Evap - Recharge - Surplus)  %>% 
+                      mutate(Snowpack = ifelse(test = Snowpack>0, 
+                                                yes = Snowpack, 
+                                                no  = 0))  
+    
+  }
+  
+    
+    write_csv(water_budget, file="thorntwaite.csv")
+```

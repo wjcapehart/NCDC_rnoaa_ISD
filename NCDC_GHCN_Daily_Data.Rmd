@@ -106,7 +106,7 @@ Stations within a somewhat arbitrary radius of the "CITY" of Sydney, Australia, 
 
 # Station List for Sydney, Australia
 
-ncdc_ids = ncdc_stations(locationid = 'CITY:AS000010', 
+ncdc_ids = ncdc_stations(locationid = 'HUC:18090101', 
                          datasetid  = 'GHCND',
                          limit      = 1000)
 
@@ -122,7 +122,7 @@ Stations in Pennington "CNTY" can be found using "locatoinid" **FIPS:46103** (so
 
 # Station List for Pennington County, SD
 
-ncdc_ids = ncdc_stations(locationid = 'FIPS:46103', 
+ncdc_ids = ncdc_stations(locationid = 'FIPS:46053', 
                          datasetid  = 'GHCND',
                          limit      = 1000)
 
@@ -174,7 +174,7 @@ Stations in North Korea that they allow us to see, **FIPS:NK**
 
 # Station List for the North Korea
 
-ncdc_ids = ncdc_stations(locationid = 'FIPS:KN', 
+ncdc_ids = ncdc_stations(locationid = 'HUC:10120110', 
                          limit      = 1000)
 
 ncdc_ids$data
