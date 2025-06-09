@@ -4,8 +4,8 @@ ACMH,mean_midnight_to_midnight_mean_cloudiness_manual,Average cloudiness midnigh
 ACSC,mean_sunrise_to_sunset_mean_cloudiness_automated,Average cloudiness sunrise to sunset from 30-second ceilometer data,cloud_area_fraction,percent,1,0,time:mean
 ACSH,mean_sunrise_to_sunset_mean_cloudiness_manual,Average cloudiness sunrise to sunset from manual observations,cloud_area_fraction,percent,1,0,time:mean
 ADPT,dew_point_temperature,2-m Average Daily Dew Point Temperature,dew_point_temperature,degC,0.1,0,time:mean
-ASLP,air_pressure_at_sea_level,Mean Daily Pressure Reduced to Mean Sea Level,air_pressure_at_sea_level,degC,0.1,0,time:mean
-ASTP,surface_air_pressure,Mean Daily Surface Pressure,surface_air_pressure,degC,0.1,0,time:mean
+ASLP,air_pressure_at_sea_level,Mean Daily Pressure Reduced to Mean Sea Level,air_pressure_at_sea_level,hPa,0.1,0,time:mean
+ASTP,surface_air_pressure,Mean Daily Surface Pressure,surface_air_pressure,hPa,0.1,0,time:mean
 AWBT,wet_bulb_temperature,2-m Average Daily Wet Bulb Temperature,wet_bulb_temperature,degC,0.1,0,time:mean
 AWDR,mean_wind_from_direction,Mean Daily Wind Origin Direction,wind_from_direction,degrees_from,1,0,time:mean
 AWND,mean_wind_speed,Mean Daily Wind Speed,wind_speed,m s-1,0.1,0,time:mean

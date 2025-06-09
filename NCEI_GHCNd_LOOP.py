@@ -83,10 +83,12 @@ def zero_runs(a):
 
 output_directory = "./ghcnd_data/"
 
-fips_code_id     = "FIPS:56" #
+fips_code_id     = "FIPS:30" #
+
+extent = "49, -110., 51, -103.5"
 
 country_col      = "USA"
-state_col        = "WY"
+state_col        = "MT"
 
 os.makedirs((output_directory + country_col + "/" + state_col), exist_ok=True)
 
@@ -532,7 +534,7 @@ ncei = NCEIBot(token       = apiToken,
                cache_name  = "./")
 
 stations = ncei.get_stations(datasetid  =      "GHCND",
-                             locationid = fips_code_id,
+                             locationid = fips_code_id,  # extent = extent,
                              limit      =         1000)
 
 n_stations = stations.total()
@@ -992,8 +994,8 @@ fips_code_id.replace(":", "-")
 # Loading Version Information
 #
 
-get_ipython().run_line_magic('load_ext', 'version_information')
-get_ipython().run_line_magic('version_information', 'numpy, xarray, cf_xarray, pandas, pyncei, version_information')
+#get_ipython().run_line_magic('load_ext', 'version_information')
+#get_ipython().run_line_magic('version_information', 'numpy, xarray, cf_xarray, pandas, pyncei, version_information')
 
 #
 ################################################################
