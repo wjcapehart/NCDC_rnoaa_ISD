@@ -4,7 +4,7 @@
 # ![AES CEE Masthead](https://kyrill.ias.sdsmt.edu/wjc/eduresources/AES_CEE_Masthead.png)
 # # Backdoor Access of GHCND
 
-# In[ ]:
+# In[1]:
 
 
 ################################################################
@@ -73,7 +73,7 @@ def zero_runs(a):
 ################################################################
 
 
-# In[ ]:
+# In[2]:
 
 
 ################################################################
@@ -83,12 +83,10 @@ def zero_runs(a):
 
 output_directory = "./ghcnd_data/"
 
-fips_code_id     = "FIPS:30" #
-
-extent = "49, -110., 51, -103.5"
+fips_code_id     = "FIPS:46" #
 
 country_col      = "USA"
-state_col        = "MT"
+state_col        = "SD"
 
 os.makedirs((output_directory + country_col + "/" + state_col), exist_ok=True)
 
@@ -105,7 +103,7 @@ half_day = np.int64(43200000000000).astype("timedelta64[ns]")
 ################################################################
 
 
-# In[ ]:
+# In[3]:
 
 
 len(fips_code_id)                  
@@ -123,7 +121,7 @@ len(fips_code_id)
 
 
 
-# In[ ]:
+# In[4]:
 
 
 ##############################################
@@ -394,8 +392,8 @@ GHCND_to_units          = {"TMAX":"degC",
                            "WT21":"",
                            "WT22":"",
                            "ADPT":"degC",
-                           "ASLP":"degC",
-                           "ASTP":"degC",
+                           "ASLP":"hPa",
+                           "ASTP":"hPa",
                            "AWBT":"degC",
                            "EVAP":"kg m-2",
                            "PSUN":"percent",
@@ -467,7 +465,7 @@ retainable_variables = list(GHCND_to_units.keys())
 
 
 
-# In[ ]:
+# In[5]:
 
 
 GHCN_metadata_df = pd.read_csv(filepath_or_buffer = "http://kyrill.ias.sdsmt.edu:8080/thredds/fileServer/CLASS_Examples/GHCNd_Metadata.csv",
@@ -505,7 +503,7 @@ GHCN_metadata_df
 
 
 
-# In[ ]:
+# In[6]:
 
 
 ################################################################
@@ -521,7 +519,7 @@ ncei = NCEIBot(token       = apiToken,
 ################################################################
 
 
-# In[ ]:
+# In[7]:
 
 
 ################################################################
@@ -534,7 +532,7 @@ ncei = NCEIBot(token       = apiToken,
                cache_name  = "./")
 
 stations = ncei.get_stations(datasetid  =      "GHCND",
-                             locationid = fips_code_id,  # extent = extent,
+                             locationid = fips_code_id,
                              limit      =         1000)
 
 n_stations = stations.total()
@@ -567,7 +565,7 @@ stations_df["data_volume"] = data_volume
 
 
 
-# In[ ]:
+# In[8]:
 
 
 ##############################################
@@ -642,7 +640,7 @@ plt.savefig(png_inventory)
 ##############################################
 
 
-# In[ ]:
+# In[9]:
 
 
 ##############################################
@@ -955,7 +953,7 @@ for stationid, station_row in stations_df.iterrows():
 
 # ## Saving Metadata to a File
 
-# In[ ]:
+# In[10]:
 
 
 ##############################################
@@ -980,13 +978,13 @@ stations_df.to_csv(path_or_buf = csv_inventory,
 
 # ## Version Information
 
-# In[ ]:
+# In[11]:
 
 
 fips_code_id.replace(":", "-")
 
 
-# In[ ]:
+# In[13]:
 
 
 ################################################################
@@ -994,8 +992,8 @@ fips_code_id.replace(":", "-")
 # Loading Version Information
 #
 
-#get_ipython().run_line_magic('load_ext', 'version_information')
-#get_ipython().run_line_magic('version_information', 'numpy, xarray, cf_xarray, pandas, pyncei, version_information')
+get_ipython().run_line_magic('load_ext', 'version_information')
+get_ipython().run_line_magic('version_information', 'numpy, xarray, cf_xarray, pandas, pyncei, version_information')
 
 #
 ################################################################
